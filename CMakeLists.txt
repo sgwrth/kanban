@@ -5,5 +5,6 @@ set(CMAKE_CXX_STANDARD_REQUIRED true)
 
 add_executable(helloworld
 	src/app/main.cpp
+	src/app/Menue_item.cpp
 	src/core/Task.cpp
 )
