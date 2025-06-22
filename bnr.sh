@@ -4,5 +4,5 @@
 	cd ./build
 	cmake ..
 	make
-	./helloworld
+	./todosqlite
 )
