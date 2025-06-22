@@ -1,32 +1,31 @@
 #include <iostream>
 #include <memory>
+#include <string>
 #include <vector>
-#include "../app/Menue_item.h"
+#include "../app/Menu_item.h"
 #include "../core/Task.h"
+#include "../utils/Input.h"
 
 int main()
 {
-	std::cout << "helloworld\n";
-	const auto task0 = std::make_unique<Task>();
-	task0->set_name("task 0");
-	std::cout << task0->get_name() << "\n";
+	std::vector<std::string> menu_options;
+	menu_options.push_back("Create a new task");
+	menu_options.push_back("Show all tasks");
+	menu_options.push_back("Delete a task");
 
-	std::vector<std::string> menue_options;
-	menue_options.push_back("Create a new task");
-	menue_options.push_back("Show all tasks");
-	menue_options.push_back("Delete a task");
-
-	std::vector<std::unique_ptr<Menue_item>> menue;
-	for (int i = 0; i < menue_options.size(); ++i) {
-		menue.push_back(std::make_unique<Menue_item>(i, menue_options[i]));
+	std::vector<std::unique_ptr<Menu_item>> menu;
+	for (int i = 0; i < menu_options.size(); ++i) {
+		menu.push_back(std::make_unique<Menu_item>(i, menu_options[i]));
 	}
 
-	auto choice {-1};
-	std::cin >> choice;
-	// do {
-	// std::cout << "menu:\n";
-	// std::cout << "[0] create new task\n";
-	// std::cout << "[1] show tasks\n";
-	// std::cout << "[2] delete task\n";
-	// } while (invalid_choice(choice));
+	std::string choice {};
+	do {
+		std::cout << "Menu:\n";
+		for (const auto& option : menu) {
+			std::cout << "[" << option->get_number() << "] " << option->get_name() + "\n";
+		}
+		std::cout << "Choice: \n";
+		std::cin.clear();
+		std::cin >> choice;
+	} while (!Input::is_valid_menu_option(choice, menu));
 }
