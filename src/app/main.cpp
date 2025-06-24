@@ -1,6 +1,7 @@
 #include <iostream>
 #include <memory>
 #include <string>
+#include <unistd.h>
 #include <vector>
 #include "../app/Menu_item.h"
 #include "../core/Task.h"
@@ -64,16 +65,55 @@ int main()
 	} while (!Input::is_valid_menu_option(user_choice, user_menu));
 
 	if (user_choice == "0") {
-		std::cout << "[We'll do that later.]\n";
-	}
-	if (user_choice == "1") {
+
+		/*
+		 * Enter credentials.  Also, extract this.
+		 */
+		std::cout << "Enter username\n";
 		std::string username {};
-		std::cout << "Please enter username:\n";
 		std::cin >> username;
-		std::string password {};
-		std::cout << "Please enter password:\n";
-		std::cin >> password;
+		char* pw = getpass("Enter password: ");
+		std::string password {pw};
 		std::string password_encrypted {Encrypt::sha256(password)};
+
+		/*
+		 * Fetching user from DB.  If user exists, get the 'username' column.
+		 */
+		std::string select_user =
+				"SELECT * FROM user "
+				"WHERE username = ? "
+				"AND password = ?;";
+		sqlite3_stmt* select_user_stmt;
+		rc = sqlite3_prepare_v2(db, select_user.c_str(), -1, &select_user_stmt, 0);
+		std::cout << "rc prepare select user: " << rc << "\n";
+		rc = sqlite3_bind_text(select_user_stmt, 1, username.c_str(), -1, SQLITE_STATIC);
+		std::cout << "bind select user, username: " << rc << "\n";
+		rc = sqlite3_bind_text(select_user_stmt, 2, password_encrypted.c_str(), -1, SQLITE_STATIC);
+		std::cout << "bind select user, password: " << rc << "\n";
+		rc = sqlite3_step(select_user_stmt);
+		std::cout << "rc select user table: " << rc << "\n";
+
+		if (rc != SQLITE_ROW) {
+			std::cout << "Login failed.  Good bye.\n";
+			return -1;
+		}
+
+		std::string username_from_db = (const char*) sqlite3_column_text(select_user_stmt, 1);
+		std::cout << "Login successful!  Welcome, " << username_from_db << "\n";
+	}
+
+	if (user_choice == "1") {
+
+		/*
+		 * Enter credentials.  Also, extract this.
+		 */
+		std::cout << "Enter username:\n";
+		std::string username {};
+		std::cin >> username;
+		char* pw = getpass("Enter password: ");
+		std::string password {pw};
+		std::string password_encrypted {Encrypt::sha256(password)};
+
 		sqlite3_stmt* insert_user_stmt;
 		const char* insert_user =
 				"INSERT INTO user (username, password) "
@@ -87,8 +127,6 @@ int main()
 		rc = sqlite3_step(insert_user_stmt);
 		std::cout << "rc create user table: " << rc << "\n";
 	}
-
-
 
 	std::vector<std::string> menu_options;
 	menu_options.push_back("Create a new task");
