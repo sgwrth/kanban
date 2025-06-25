@@ -2,9 +2,9 @@
 #define PRIORITY_H
 
 enum class Priority {
-	high,
+	low,
 	medium,
-	low
+	high
 };
 
 #endif

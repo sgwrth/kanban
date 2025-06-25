@@ -13,7 +13,6 @@ add_executable(todosqlite
 	external/sqlite/sqlite3.c
 	src/app/main.cpp
 	src/app/Menu_item.cpp
-	src/core/Priority.cpp
 	src/core/Task.cpp
 	src/utils/Encrypt.cpp
 	src/utils/Input.cpp

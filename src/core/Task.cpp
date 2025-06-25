@@ -31,3 +31,8 @@ void Task::set_priority(const Priority priority)
 {
 	priority_ = priority;
 }
+
+std::string Task::get_created_at()
+{
+	return created_at_;
+}

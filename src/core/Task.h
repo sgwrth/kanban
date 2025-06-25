@@ -11,10 +11,12 @@ public:
 	void set_description(const std::string description);
 	Priority get_priority();
 	void set_priority(const Priority priority);
+	std::string get_created_at();
 private:
 	std::string name_;
 	std::string description_;
 	Priority priority_;
+	std::string created_at_;
 };
 
 #endif
