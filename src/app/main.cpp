@@ -5,6 +5,7 @@
 #include <vector>
 #include "../app/Menu_item.h"
 #include "../core/Task.h"
+#include "../core/User.h"
 #include "../utils/Encrypt.h"
 #include "../utils/Input.h"
 #include "../../external/sqlite/sqlite3.h"
@@ -18,7 +19,7 @@ int main()
 		return rc;
 	}
 
-	/* check if user table exists */
+	/* Check if user table exists. */
 	const char* check_for_user_table =
 			"SELECT name "
 			"FROM sqlite_master "
@@ -29,7 +30,8 @@ int main()
 	std::cout << "rc prepare: " << rc << "\n";
 	rc = sqlite3_step(stmt);
 	if (rc != SQLITE_ROW) {
-		/* no user table found -> create it */
+
+		/* No user table found.  So, create it. */
 		std::cout << "rc step: " << rc << "\n";
 		const char* create_user_table =
 				"CREATE TABLE user ("
@@ -42,7 +44,7 @@ int main()
 		std::cout << "rc create user table: " << rc << "\n";
 	}
 	
-	// user menu
+	/* User menu. */
 	std::cout << "rc (user table present): " << rc << "\n";
 	std::vector<std::string> user_menu_options;
 	user_menu_options.push_back("Log in");	
@@ -51,7 +53,10 @@ int main()
 	for (int i = 0; i < user_menu_options.size(); ++i) {
 		user_menu.push_back(std::make_unique<Menu_item>(i, user_menu_options[i]));
 	}
-	// (extract:)
+
+	User logged_in_user;
+
+	/* (Extract.) */
 	std::string user_choice {};
 	do {
 		std::cout << "User menu:\n";
@@ -63,11 +68,10 @@ int main()
 		std::getline(std::cin, user_choice);
 	} while (!Input::is_valid_menu_option(user_choice, user_menu));
 
+	/* Log in. */
 	if (user_choice == "0") {
 
-		/*
-		 * Enter credentials.  Also, extract this.
-		 */
+		/* Enter credentials.  Also, extract this. */
 		std::cout << "Enter username\n";
 		std::string username {};
 		std::getline(std::cin, username);
@@ -75,9 +79,7 @@ int main()
 		std::string password {pw};
 		std::string password_encrypted {Encrypt::sha256(password)};
 
-		/*
-		 * Fetching user from DB.  If user exists, get the 'username' column.
-		 */
+		/* Fetching user from DB.  If user exists, get the 'username' column. */
 		std::string select_user =
 				"SELECT * FROM user "
 				"WHERE username = ? "
@@ -97,16 +99,19 @@ int main()
 			return -1;
 		}
 
+		int user_id_from_db = (int) sqlite3_column_int(select_user_stmt, 0);
 		std::string username_from_db = (const char*) sqlite3_column_text(select_user_stmt, 1);
-		std::cout << "Login successful!  Welcome, " << username_from_db << "\n";
+		logged_in_user.id = user_id_from_db;
+		logged_in_user.username = username_from_db;	
+		std::cout << "Login successful!  Welcome, " << logged_in_user.username
+				<< " [ID: " << logged_in_user.id << "]\n";
 
 	}
 
+	/* Create user. */
 	if (user_choice == "1") {
 
-		/*
-		 * Enter credentials.  Also, extract this.
-		 */
+		/* Enter credentials.  Also, extract this. */
 		std::cout << "Enter username:\n";
 		std::string username {};
 		std::getline(std::cin, username);
@@ -114,6 +119,7 @@ int main()
 		std::string password {pw};
 		std::string password_encrypted {Encrypt::sha256(password)};
 
+		/* Create user. */
 		sqlite3_stmt* insert_user_stmt;
 		const char* insert_user =
 				"INSERT INTO user (username, password) "
@@ -126,6 +132,25 @@ int main()
 		std::cout << "bind insert user, password: " << rc << "\n";
 		rc = sqlite3_step(insert_user_stmt);
 		std::cout << "rc create user table: " << rc << "\n";
+		if (rc = SQLITE_DONE) {
+
+			/* Fetch user from DB. */
+			const char* fetch_user =
+					"SELECT * FROM user AS u "
+					"WHERE u.username = ?;";
+			sqlite3_stmt* fetch_user_stmt;
+			rc = sqlite3_prepare_v2(db, fetch_user, -1, &fetch_user_stmt, 0);
+			rc = sqlite3_bind_text(fetch_user_stmt, 1, username.c_str(), -1, SQLITE_STATIC);
+			rc = sqlite3_step(fetch_user_stmt);
+			int user_id_from_db = (int) sqlite3_column_int(fetch_user_stmt, 0);
+			logged_in_user.username = username;
+			logged_in_user.id = user_id_from_db;
+			std::cout << "New user [" << logged_in_user.id << "] created.  "
+					<< "Hello, " << logged_in_user.username << "\n";
+		} else {
+			std::cout << "Something went wrong.  Bye.\n";
+			return -1;
+		}
 	}
 
 	/* Check if task table exists */
@@ -147,6 +172,7 @@ int main()
 				"name TEXT NOT NULL,"
 				"description TEXT NOT NULL,"
 				"priority INTEGER DEFAULT 0,"
+				"userid INTEGER NOT NULL,"
 				"created_at DATETIME DEFAULT CURRENT_TIMESTAMP);";
 		rc = sqlite3_prepare_v2(db, create_task_table, -1, &task_table_stmt, 0);
 		std::cout << "rc prepare create task table: " << rc << "\n";
@@ -158,46 +184,90 @@ int main()
 	menu_options.push_back("Create a new task");
 	menu_options.push_back("Show all tasks");
 	menu_options.push_back("Delete a task");
+	menu_options.push_back("Exit program");
 
 	std::vector<std::unique_ptr<Menu_item>> menu;
 	for (int i = 0; i < menu_options.size(); ++i) {
 		menu.push_back(std::make_unique<Menu_item>(i, menu_options[i]));
 	}
 
-	// (extract:)
-	std::string choice {};
-	do {
-		std::cout << "Menu:\n";
-		for (const auto& option : menu) {
-			std::cout << "[" << option->get_number() << "] "
-					<< option->get_name() + "\n";
+	while (true) {
+		// (extract:)
+		std::string choice {};
+		do {
+			std::cout << "Menu:\n";
+			for (const auto& option : menu) {
+				std::cout << "[" << option->get_number() << "] "
+						<< option->get_name() + "\n";
+			}
+			std::cout << "Choice: \n";
+			std::getline(std::cin, choice);
+		} while (!Input::is_valid_menu_option(choice, menu));
+
+		/* Store task in DB. */
+		if (choice == "0") {
+			std::cout << "Enter task name\n";
+			std::string task_name {};
+			std::getline(std::cin, task_name);
+			std::cout << "Enter task description\n";
+			std::string task_description {};
+			std::getline(std::cin, task_description);
+
+			const char* insert_task =
+					"INSERT INTO task (name, description, userid)"
+					"VALUES (?, ?, ?);";
+			sqlite3_stmt* insert_task_stmt;
+			rc = sqlite3_prepare_v2(db, insert_task, -1, &insert_task_stmt, 0);
+			std::cout << "insert task: " << rc << "\n";
+			rc = sqlite3_bind_text(insert_task_stmt, 1, task_name.c_str(), -1, SQLITE_STATIC);
+			std::cout << "bind task name: " << rc << "\n";
+			rc = sqlite3_bind_text(insert_task_stmt, 2, task_description.c_str(), -1, SQLITE_STATIC);
+			std::cout << "bind task description: " << rc << "\n";
+			rc = sqlite3_bind_int(insert_task_stmt, 3, logged_in_user.id);
+			std::cout << "bind task user ID: " << rc << "\n";
+			rc = sqlite3_step(insert_task_stmt);
+			std::cout << "rc insert task: " << rc << "\n";
 		}
-		std::cout << "Choice: \n";
-		std::getline(std::cin, choice);
-	} while (!Input::is_valid_menu_option(choice, menu));
 
-	if (choice == "0") {
-		std::cout << "Enter task name\n";
-		std::string task_name {};
-		std::getline(std::cin, task_name);
-		std::cout << "Enter task description\n";
-		std::string task_description {};
-		std::getline(std::cin, task_description);
+		/* Show all tasks by user. */
+		if (choice == "1") {
+			const char* select_all_tasks =
+					"SELECT * FROM task AS t "
+					"WHERE t.userid = ?;";
+			sqlite3_stmt* select_all_tasks_stmt;
+			rc = sqlite3_prepare_v2(db, select_all_tasks, -1, &select_all_tasks_stmt, 0);
+			std::cout << "select all tasks: " << rc << "\n";
+			rc = sqlite3_bind_int(select_all_tasks_stmt, 1, logged_in_user.id);
+			std::cout << "bind select all tasks: " << rc << "\n";
+			
+			std::vector<std::unique_ptr<Task>> all_tasks;
+			while (sqlite3_step(select_all_tasks_stmt) == SQLITE_ROW) {
+				int id = (int) sqlite3_column_int(select_all_tasks_stmt, 0);
+				std::string name = (const char*) sqlite3_column_text(select_all_tasks_stmt, 1);
+				std::string description = (const char*) sqlite3_column_text(select_all_tasks_stmt, 2);
+				int priority = (int) sqlite3_column_int(select_all_tasks_stmt, 3);
+		    		int user_id = (int) sqlite3_column_int(select_all_tasks_stmt, 4);
+		       		std::string created_at = (const char*) sqlite3_column_text(select_all_tasks_stmt, 5);
+				auto task = std::make_unique<Task>(
+						id,
+						name,
+						description,
+						priority,
+						user_id,
+						created_at
+				);
+				all_tasks.push_back(std::move(task));
+			};
+			for (int i = 0; i < all_tasks.size(); ++i) {
+				std::cout << "Task: " << all_tasks[i]->get_name() << "\n";
+			}
+		}
 
-		/* Store task in DB */
-		const char* insert_task =
-				"INSERT INTO task (name, description)"
-				"VALUES (?, ?);";
-		sqlite3_stmt* insert_task_stmt;
-		rc = sqlite3_prepare_v2(db, insert_task, -1, &insert_task_stmt, 0);
-		std::cout << "insert task: " << rc << "\n";
-		rc = sqlite3_bind_text(insert_task_stmt, 1, task_name.c_str(), -1, SQLITE_STATIC);
-		std::cout << "bind task name: " << rc << "\n";
-		rc = sqlite3_bind_text(insert_task_stmt, 2, task_description.c_str(), -1, SQLITE_STATIC);
-		std::cout << "bind task description: " << rc << "\n";
-		rc = sqlite3_step(insert_task_stmt);
-		std::cout << "rc insert task: " << rc << "\n";
+		/* Quit program. */
+		if (choice == "3") {
+			sqlite3_close(db);
+			return 0;
+		}
 	}
 
-	sqlite3_close(db);
 }
