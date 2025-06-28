@@ -3,5 +3,4 @@
 	cd ./build
 	cmake ..
 	make
-	./todosqlite
 )

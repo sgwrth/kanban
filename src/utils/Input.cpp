@@ -1,9 +1,28 @@
 #include "Input.h"
+#include <iostream>
 #include <memory>
 #include <stdexcept>
 #include <string>
 #include <vector>
 #include "../app/Menu_item.h"
+
+std::string Input::get_menu_option_choice(
+		const std::vector<std::unique_ptr<Menu_item>>& menu,
+		const std::string& menu_name
+)
+{
+	std::string user_choice {};
+	do {
+		std::cout << menu_name << ":\n";
+		for (const auto& option : menu) {
+			std::cout << "[" << option->get_number() << "] "
+					<< option->get_name() + "\n";
+		}
+		std::cout << "Choice:\n";
+		std::getline(std::cin, user_choice);
+	} while (!Input::is_valid_menu_option(user_choice, menu));
+	return user_choice;
+}
 
 bool Input::is_valid_menu_option(
 		const std::string& input,
