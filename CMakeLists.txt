@@ -16,6 +16,7 @@ add_executable(todosqlite
 	src/core/Task.cpp
 	src/utils/Encrypt.cpp
 	src/utils/Input.cpp
+	src/utils/Sql.cpp
 )
 
 target_link_libraries(todosqlite
