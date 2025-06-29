@@ -1,4 +1,5 @@
 #include <iostream>
+#include <libgen.h> /* Needed for dirname function. */
 #include <memory>
 #include <string>
 #include <unistd.h>
@@ -12,11 +13,29 @@
 
 int main()
 {
+	/*
+	 * Non-portable, Linux-specific way of getting the directory
+	 * in which the binary is located.  This ensures that the DB
+	 * will be created in that same directory, not the directory
+	 * from which the binary is called for execution.
+	 */
+	auto buffer = std::vector<char>(1024);
+	const ssize_t len = readlink("/proc/self/exe", buffer.data(), buffer.size() - 1);
+	buffer[len] = '\0'; /* Terminate the path. */
+	const std::string binary_path{buffer.data()}; /* Create a copy. */
+	const std::string binary_dir{dirname(buffer.data())}; /* 'dirname' modifies buffer.data() in place. */
+	std::cout << binary_dir << '\n';
+
+	/* Prepare filepath for DB creation. */
+	const char* db_filename = "data.db";
+	const std::string db_fullpath = binary_dir + '/' + db_filename;
+	std::cout << db_fullpath << '\n';
+
 	/* Open (or, if it doesn't exist) create DB. */
 	sqlite3* db;
-	int rc = sqlite3_open("data.db", &db);
+	int rc = sqlite3_open(db_fullpath.c_str(), &db);
 	if (rc != SQLITE_OK) {
-		std::cerr << "Could not open DB: " << sqlite3_errmsg(db) << "\n";
+		std::cerr << "Could not open DB: " << sqlite3_errmsg(db) << '\n';
 		return rc;
 	}
 
@@ -32,7 +51,6 @@ int main()
 
 	/* No user table found.  So, create it. */
 	if (rc != SQLITE_ROW) {
-		std::cout << "rc step: " << rc << "\n";
 		std::string create_user_table =
 				"CREATE TABLE user ("
 				"id INTEGER PRIMARY KEY AUTOINCREMENT,"
@@ -101,7 +119,7 @@ int main()
 		std::cout << "Enter username:\n";
 		std::string username {};
 		std::getline(std::cin, username);
-		char* pw = getpass("Enter password: ");
+		std::string pw = getpass("Enter password: ");
 		std::string password {pw};
 		std::string password_encrypted {Encrypt::sha256(password)};
 
@@ -129,8 +147,8 @@ int main()
 			int user_id_from_db = (int) sqlite3_column_int(fetch_user_stmt, 0);
 			logged_in_user.username = username;
 			logged_in_user.id = user_id_from_db;
-			std::cout << "New user [" << logged_in_user.id << "] created.  "
-					<< "Hello, " << logged_in_user.username << "\n";
+			std::cout << "New user [ID " << logged_in_user.id << "] created.  "
+					<< "Hello, " << logged_in_user.username << '\n';
 		} else {
 			std::cout << "Something went wrong.  Bye.\n";
 			return -1;
@@ -161,12 +179,11 @@ int main()
 		rc = sqlite3_step(check_task_stmt);
 	}
 
-
 	/* Create menu. */
 	std::vector<std::string> menu_options;
 	menu_options.push_back("Create a new task");
 	menu_options.push_back("Show all tasks");
-	menu_options.push_back("Delete a task");
+	menu_options.push_back("Delete a task [Todo]");
 	menu_options.push_back("Exit program");
 	std::vector<std::unique_ptr<Menu_item>> menu;
 	for (int i = 0; i < menu_options.size(); ++i) {
@@ -187,11 +204,11 @@ int main()
 			std::string task_description {};
 			std::getline(std::cin, task_description);
 
-			const char* insert_task =
+			std::string insert_task =
 					"INSERT INTO task (name, description, userid)"
 					"VALUES (?, ?, ?);";
 			sqlite3_stmt* insert_task_stmt;
-			rc = sqlite3_prepare_v2(db, insert_task, -1, &insert_task_stmt, 0);
+			rc = sqlite3_prepare_v2(db, insert_task.c_str(), -1, &insert_task_stmt, 0);
 			rc = sqlite3_bind_text(insert_task_stmt, 1, task_name.c_str(), -1, SQLITE_STATIC);
 			rc = sqlite3_bind_text(insert_task_stmt, 2, task_description.c_str(), -1, SQLITE_STATIC);
 			rc = sqlite3_bind_int(insert_task_stmt, 3, logged_in_user.id);
@@ -231,8 +248,9 @@ int main()
 
 			/* Output all tasks. */
 			for (int i = 0; i < all_tasks.size(); ++i) {
-				std::cout << "Task: " << all_tasks[i]->get_name() << "\n";
+				std::cout << "Task: " << all_tasks[i]->get_name() << '\n';
 			}
+
 		}
 
 		/* Quit program. */
@@ -240,6 +258,7 @@ int main()
 			sqlite3_close(db);
 			return 0;
 		}
+
 	}
 
 }
