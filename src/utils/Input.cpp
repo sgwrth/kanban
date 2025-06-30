@@ -18,7 +18,7 @@ std::string Input::get_menu_option_choice(
 			std::cout << "[" << option->get_number() << "] "
 					<< option->get_name() + "\n";
 		}
-		std::cout << "Choice:\n";
+		std::cout << "Choice: ";
 		std::getline(std::cin, user_choice);
 	} while (!Input::is_valid_menu_option(user_choice, menu));
 	return user_choice;
@@ -41,3 +41,4 @@ bool Input::is_valid_menu_option(
 		return false;
 	}
 }
+
