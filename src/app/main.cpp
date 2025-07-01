@@ -7,7 +7,7 @@
 #include "../app/Menu_item.h"
 #include "../core/Task.h"
 #include "../core/User.h"
-#include "../utils/Encrypt.h"
+#include "../utils/Crypto.h"
 #include "../utils/Input.h"
 #include "../utils/Sql.h"
 #include "../utils/Text.h"
@@ -75,7 +75,7 @@ int main()
 		std::getline(std::cin, username);
 		std::string pw = getpass("Enter password: ");
 		std::string password{pw};
-		std::string password_encrypted{Encrypt::sha256(password)};
+		std::string password_encrypted{Crypto::sha256(password)};
 
 		/* Fetching user from DB.  If user exists, get the 'username' column. */
 		std::string select_user = Sql::get_query_select_user();
@@ -110,7 +110,7 @@ int main()
 		std::getline(std::cin, username);
 		std::string pw = getpass("Enter password: ");
 		std::string password{pw};
-		std::string password_encrypted{Encrypt::sha256(password)};
+		std::string password_encrypted{Crypto::sha256(password)};
 
 		/* Create user. */
 		sqlite3_stmt* insert_user_stmt{nullptr};

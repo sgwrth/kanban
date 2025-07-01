@@ -2,9 +2,10 @@
 #define ENCRYPT_H
 #include <string>
 
-class Encrypt {
+class Crypto {
 public:
 	static std::string sha256(const std::string& str);
+	static std::string encrypt(std::string plaintext);
 };
 
 #endif
