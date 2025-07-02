@@ -46,7 +46,7 @@ std::string Sql::get_query_create_user_table()
 	const char* sql = R"(
 		CREATE TABLE user (
 			id INTEGER PRIMARY KEY AUTOINCREMENT,
-			username TEXT UNIQUE NOT NU
+			username TEXT UNIQUE NOT NULL,
 			password TEXT NOT NULL
 		);
 	)";

@@ -47,7 +47,7 @@ int main()
 
 	/* No user table found.  So, create it. */
 	if (rc != SQLITE_ROW) {
-		std::string create_user_table = Sql::get_query_check_for_user_table();
+		std::string create_user_table = Sql::get_query_create_user_table();
 		rc = sqlite3_prepare_v2(db, create_user_table.c_str(), -1, &check_user_stmt, 0);
 		rc = sqlite3_step(check_user_stmt);
 	}
@@ -75,14 +75,14 @@ int main()
 		std::getline(std::cin, username);
 		std::string pw = getpass("Enter password: ");
 		std::string password{pw};
-		std::string password_encrypted{Crypto::sha256(password)};
+		std::string pw_encrypted{Crypto::sha256(password)};
 
 		/* Fetching user from DB.  If user exists, get the 'username' column. */
 		std::string select_user = Sql::get_query_select_user();
 		sqlite3_stmt* select_user_stmt{nullptr};
 		rc = sqlite3_prepare_v2(db, select_user.c_str(), -1, &select_user_stmt, 0);
 		rc = sqlite3_bind_text(select_user_stmt, 1, username.c_str(), -1, SQLITE_STATIC);
-		rc = sqlite3_bind_text(select_user_stmt, 2, password_encrypted.c_str(), -1, SQLITE_STATIC);
+		rc = sqlite3_bind_text(select_user_stmt, 2, pw_encrypted.c_str(), -1, SQLITE_STATIC);
 		rc = sqlite3_step(select_user_stmt);
 
 		/* Early return with error code in case login failed. */
@@ -136,7 +136,7 @@ int main()
 					<< "Hello, " << logged_in_user.username << '\n';
 		} else {
 			std::cout << "Something went wrong.  Bye.\n";
-			return -1;
+			return 1;
 		}
 	}
 
@@ -172,7 +172,7 @@ int main()
 		/* Store task in DB. */
 		if (choice == "0") {
 
-			/* Get task data. */
+			/* Get task data from user. */
 			std::cout << "Enter task name (max. 16 characters):\n";
 			std::string task_name{};
 			std::getline(std::cin, task_name);
@@ -180,12 +180,16 @@ int main()
 			std::string task_description{};
 			std::getline(std::cin, task_description);
 
+			/* Encrypt task name and description. */
+			std::string task_name_encrypted{Crypto::encrypt(task_name)};
+			std::string task_descr_encrypted{Crypto::encrypt(task_description)};
+
 			/* Insert task. */
 			std::string insert_task = Sql::get_query_insert_task();
 			sqlite3_stmt* insert_task_stmt{nullptr};
 			rc = sqlite3_prepare_v2(db, insert_task.c_str(), -1, &insert_task_stmt, 0);
-			rc = sqlite3_bind_text(insert_task_stmt, 1, task_name.c_str(), -1, SQLITE_STATIC);
-			rc = sqlite3_bind_text(insert_task_stmt, 2, task_description.c_str(), -1, SQLITE_STATIC);
+			rc = sqlite3_bind_text(insert_task_stmt, 1, task_name_encrypted.c_str(), -1, SQLITE_STATIC);
+			rc = sqlite3_bind_text(insert_task_stmt, 2, task_descr_encrypted.c_str(), -1, SQLITE_STATIC);
 			rc = sqlite3_bind_int(insert_task_stmt, 3, logged_in_user.id);
 			rc = sqlite3_step(insert_task_stmt);
 		}
@@ -210,8 +214,8 @@ int main()
 		       		std::string created_at = (const char*) sqlite3_column_text(select_tasks_stmt, 5);
 				auto task = std::make_unique<Task>(
 						id,
-						name,
-						description,
+						Crypto::decrypt(name),
+						Crypto::decrypt(description),
 						priority,
 						user_id,
 						created_at

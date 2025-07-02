@@ -41,3 +41,25 @@ std::string Crypto::encrypt(std::string plaintext)
 	);
 	return ciphertext;
 }
+
+std::string Crypto::decrypt(std::string ciphertext)
+{
+	KeyIV key_and_iv;
+	CryptoPP::byte key[CryptoPP::AES::DEFAULT_KEYLENGTH];
+	CryptoPP::byte iv[CryptoPP::AES::BLOCKSIZE];
+	std::copy(std::begin(key_and_iv.key), std::end(key_and_iv.key), key);
+	std::copy(std::begin(key_and_iv.iv), std::end(key_and_iv.iv), iv);
+
+	std::string plaintext;
+	CryptoPP::CBC_Mode<CryptoPP::AES>::Decryption decryptor;
+	decryptor.SetKeyWithIV(key, sizeof(key), iv);
+	CryptoPP::StringSource string_source_decrypt(
+			ciphertext,
+			true,
+			new CryptoPP::StreamTransformationFilter(
+					decryptor,
+					new CryptoPP::StringSink(plaintext)
+			)
+	);
+	return plaintext;
+}
