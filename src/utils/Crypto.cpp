@@ -1,6 +1,7 @@
 #include "../utils/Crypto.h"
 #include <algorithm>
 #include <cryptopp/aes.h>
+#include <cryptopp/base64.h>
 #include <cryptopp/filters.h>
 #include <cryptopp/hex.h>
 #include <cryptopp/modes.h>
@@ -20,7 +21,7 @@ std::string Crypto::sha256(const std::string& str)
 	return ss.str();
 }
 
-std::string Crypto::encrypt(std::string plaintext)
+std::string Crypto::encrypt(const std::string& plaintext)
 {
 	KeyIV key_and_iv;
 	CryptoPP::byte key[CryptoPP::AES::DEFAULT_KEYLENGTH];
@@ -42,7 +43,7 @@ std::string Crypto::encrypt(std::string plaintext)
 	return ciphertext;
 }
 
-std::string Crypto::decrypt(std::string ciphertext)
+std::string Crypto::decrypt(const std::string& ciphertext)
 {
 	KeyIV key_and_iv;
 	CryptoPP::byte key[CryptoPP::AES::DEFAULT_KEYLENGTH];
@@ -62,4 +63,32 @@ std::string Crypto::decrypt(std::string ciphertext)
 			)
 	);
 	return plaintext;
+}
+
+
+std::string Crypto::to_base64(const std::string& raw_binary)
+{
+	std::string base64_string{};
+	CryptoPP::StringSource string_source_base64(
+			raw_binary,
+			true,
+			new CryptoPP::Base64Encoder(
+					new CryptoPP::StringSink(base64_string),
+					false /* No line breaks. */
+			)
+	);
+	return base64_string;
+}
+
+std::string Crypto::to_raw_binary(const std::string& base64)
+{
+	std::string raw_binary{};
+	CryptoPP::StringSource string_source_raw_binary(
+			base64,
+			true,
+			new CryptoPP::Base64Decoder(
+					new CryptoPP::StringSink(raw_binary)
+			)
+	);
+	return raw_binary;
 }

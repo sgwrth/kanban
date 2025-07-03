@@ -73,16 +73,22 @@ int main()
 		std::cout << "Enter username: ";
 		std::string username{};
 		std::getline(std::cin, username);
-		std::string pw = getpass("Enter password: ");
-		std::string password{pw};
-		std::string pw_encrypted{Crypto::sha256(password)};
+		std::string pw_cstring = getpass("Enter password: ");
+		std::string password{pw_cstring};
+		std::string pw_hashed{Crypto::sha256(password)};
+
+		/* Encrypt username and password. */
+		std::string username_encrypted{Crypto::encrypt(username)};
+		std::string username_encrypted_b64{Crypto::to_base64(username_encrypted)};
+		std::string pw_hashed_encrypted{Crypto::encrypt(pw_hashed)};
+		std::string pw_hashed_encrypted_b64{Crypto::to_base64(pw_hashed_encrypted)};
 
 		/* Fetching user from DB.  If user exists, get the 'username' column. */
 		std::string select_user = Sql::get_query_select_user();
 		sqlite3_stmt* select_user_stmt{nullptr};
 		rc = sqlite3_prepare_v2(db, select_user.c_str(), -1, &select_user_stmt, 0);
-		rc = sqlite3_bind_text(select_user_stmt, 1, username.c_str(), -1, SQLITE_STATIC);
-		rc = sqlite3_bind_text(select_user_stmt, 2, pw_encrypted.c_str(), -1, SQLITE_STATIC);
+		rc = sqlite3_bind_text(select_user_stmt, 1, username_encrypted_b64.c_str(), -1, SQLITE_STATIC);
+		rc = sqlite3_bind_text(select_user_stmt, 2, pw_hashed_encrypted_b64.c_str(), -1, SQLITE_STATIC);
 		rc = sqlite3_step(select_user_stmt);
 
 		/* Early return with error code in case login failed. */
@@ -93,9 +99,13 @@ int main()
 
 		/* Retrieve user's data and assign to local user struct. */
 		int user_id_from_db = (int) sqlite3_column_int(select_user_stmt, 0);
-		std::string username_from_db = (const char*) sqlite3_column_text(select_user_stmt, 1);
+		std::string username_from_db_b64 = (const char*) sqlite3_column_text(select_user_stmt, 1);
+		/* Decrypt user's data. */
+		std::string username_from_db_raw_binary{Crypto::to_raw_binary(username_from_db_b64)};
+		std::string username_from_db_decrypted{Crypto::decrypt(username_from_db_raw_binary)};
+
 		logged_in_user.id = user_id_from_db;
-		logged_in_user.username = username_from_db;
+		logged_in_user.username = username_from_db_decrypted;
 		std::cout << "Login successful!  Welcome, " << logged_in_user.username
 				<< " [ID: " << logged_in_user.id << "]\n";
 
@@ -108,16 +118,21 @@ int main()
 		std::cout << "Enter username: ";
 		std::string username{};
 		std::getline(std::cin, username);
-		std::string pw = getpass("Enter password: ");
-		std::string password{pw};
-		std::string password_encrypted{Crypto::sha256(password)};
+		std::string pw_cstring = getpass("Enter password: ");
+		std::string pw{pw_cstring};
+		std::string pw_hashed{Crypto::sha256(pw)};
+		/* Encrypt username and password. */
+		std::string username_encrypted{Crypto::encrypt(username)};
+		std::string username_encrypted_b64{Crypto::to_base64(username_encrypted)};
+		std::string pw_hashed_encrypted{Crypto::encrypt(pw_hashed)};
+		std::string pw_hashed_encrypted_b64{Crypto::to_base64(pw_hashed_encrypted)};
 
 		/* Create user. */
 		sqlite3_stmt* insert_user_stmt{nullptr};
 		std::string insert_user = Sql::get_query_insert_user();
 		rc = sqlite3_prepare_v2(db, insert_user.c_str(), -1, &insert_user_stmt, 0);
-		rc = sqlite3_bind_text(insert_user_stmt, 1, username.c_str(), -1, SQLITE_STATIC);
-		rc = sqlite3_bind_text(insert_user_stmt, 2, password_encrypted.c_str(), -1, SQLITE_STATIC);
+		rc = sqlite3_bind_text(insert_user_stmt, 1, username_encrypted_b64.c_str(), -1, SQLITE_STATIC);
+		rc = sqlite3_bind_text(insert_user_stmt, 2, pw_hashed_encrypted_b64.c_str(), -1, SQLITE_STATIC);
 		rc = sqlite3_step(insert_user_stmt);
 		if (rc = SQLITE_DONE) {
 
@@ -125,10 +140,10 @@ int main()
 			std::string fetch_user = Sql::get_query_fetch_user();
 			sqlite3_stmt* fetch_user_stmt{nullptr};
 			rc = sqlite3_prepare_v2(db, fetch_user.c_str(), -1, &fetch_user_stmt, 0);
-			rc = sqlite3_bind_text(fetch_user_stmt, 1, username.c_str(), -1, SQLITE_STATIC);
+			rc = sqlite3_bind_text(fetch_user_stmt, 1, username_encrypted_b64.c_str(), -1, SQLITE_STATIC);
 			rc = sqlite3_step(fetch_user_stmt);
 
-			/* Assign user data from DB to local user struct. */
+			/* Assign user ID from DB to local user struct member. */
 			int user_id_from_db = (int) sqlite3_column_int(fetch_user_stmt, 0);
 			logged_in_user.username = username;
 			logged_in_user.id = user_id_from_db;
@@ -181,15 +196,17 @@ int main()
 			std::getline(std::cin, task_description);
 
 			/* Encrypt task name and description. */
-			std::string task_name_encrypted{Crypto::encrypt(task_name)};
-			std::string task_descr_encrypted{Crypto::encrypt(task_description)};
+			std::string task_name_raw_binary{Crypto::encrypt(task_name)};
+			std::string task_name_b64{Crypto::to_base64(task_name_raw_binary)};
+			std::string task_descr_raw_binary{Crypto::encrypt(task_description)};
+			std::string task_descr_b64{Crypto::to_base64(task_descr_raw_binary)};
 
 			/* Insert task. */
 			std::string insert_task = Sql::get_query_insert_task();
 			sqlite3_stmt* insert_task_stmt{nullptr};
 			rc = sqlite3_prepare_v2(db, insert_task.c_str(), -1, &insert_task_stmt, 0);
-			rc = sqlite3_bind_text(insert_task_stmt, 1, task_name_encrypted.c_str(), -1, SQLITE_STATIC);
-			rc = sqlite3_bind_text(insert_task_stmt, 2, task_descr_encrypted.c_str(), -1, SQLITE_STATIC);
+			rc = sqlite3_bind_text(insert_task_stmt, 1, task_name_b64.c_str(), -1, SQLITE_STATIC);
+			rc = sqlite3_bind_text(insert_task_stmt, 2, task_descr_b64.c_str(), -1, SQLITE_STATIC);
 			rc = sqlite3_bind_int(insert_task_stmt, 3, logged_in_user.id);
 			rc = sqlite3_step(insert_task_stmt);
 		}
@@ -210,12 +227,19 @@ int main()
 				std::string name = (const char*) sqlite3_column_text(select_tasks_stmt, 1);
 				std::string description = (const char*) sqlite3_column_text(select_tasks_stmt, 2);
 				int priority = (int) sqlite3_column_int(select_tasks_stmt, 3);
-		    		int user_id = (int) sqlite3_column_int(select_tasks_stmt, 4);
-		       		std::string created_at = (const char*) sqlite3_column_text(select_tasks_stmt, 5);
+				int user_id = (int) sqlite3_column_int(select_tasks_stmt, 4);
+				std::string created_at = (const char*) sqlite3_column_text(select_tasks_stmt, 5);
+
+				/* Decrypt data from Base64 to raw binary to plaintext. */
+				std::string name_raw_binary{Crypto::to_raw_binary(name)};
+				std::string name_decrypted{Crypto::decrypt(name_raw_binary)};
+				std::string description_raw_binary{Crypto::to_raw_binary(description)};
+				std::string description_decrypted{Crypto::decrypt(description_raw_binary)};
+
 				auto task = std::make_unique<Task>(
 						id,
-						Crypto::decrypt(name),
-						Crypto::decrypt(description),
+						name_decrypted,
+						description_decrypted,
 						priority,
 						user_id,
 						created_at
