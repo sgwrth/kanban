@@ -15,6 +15,7 @@ add_executable(todosqlite
 	src/app/Menu_item.cpp
 	src/core/Task.cpp
 	src/utils/Crypto.cpp
+	src/utils/DB.cpp
 	src/utils/Input.cpp
 	src/utils/Sql.cpp
 	src/utils/Text.cpp

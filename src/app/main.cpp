@@ -8,6 +8,7 @@
 #include "../core/Task.h"
 #include "../core/User.h"
 #include "../utils/Crypto.h"
+#include "../utils/DB.h"
 #include "../utils/Input.h"
 #include "../utils/Sql.h"
 #include "../utils/Text.h"
@@ -40,17 +41,29 @@ int main()
 	}
 
 	/* Check if user table exists. */
+	/*
 	std::string check_for_user_table = Sql::get_query_check_for_user_table();
 	sqlite3_stmt* check_user_stmt{nullptr};
 	rc = sqlite3_prepare_v2(db, check_for_user_table.c_str(), -1, &check_user_stmt, 0);
 	rc = sqlite3_step(check_user_stmt);
+	*/
+
+	/* Desired code. */
+	if (!DB::exists_table(db, Sql::get_query_check_for_user_table())) {
+		if (!DB::create_table(db, Sql::get_query_create_user_table())) {
+			std::cout << "Error: Creating user table failed.\n";
+			return 1;
+		}
+	}
 
 	/* No user table found.  So, create it. */
+	/*
 	if (rc != SQLITE_ROW) {
 		std::string create_user_table = Sql::get_query_create_user_table();
 		rc = sqlite3_prepare_v2(db, create_user_table.c_str(), -1, &check_user_stmt, 0);
 		rc = sqlite3_step(check_user_stmt);
 	}
+	*/
 	
 	/* Create user menu. */
 	std::vector<std::string> user_menu_options;
