@@ -10,6 +10,7 @@
 #include "../utils/Crypto.h"
 #include "../utils/DB.h"
 #include "../utils/Input.h"
+#include "../utils/Menu.h"
 #include "../utils/Sql.h"
 #include "../utils/Text.h"
 #include "../../external/sqlite/sqlite3.h"
@@ -40,39 +41,15 @@ int main()
 		return rc;
 	}
 
-	/* Check if user table exists. */
-	/*
-	std::string check_for_user_table = Sql::get_query_check_for_user_table();
-	sqlite3_stmt* check_user_stmt{nullptr};
-	rc = sqlite3_prepare_v2(db, check_for_user_table.c_str(), -1, &check_user_stmt, 0);
-	rc = sqlite3_step(check_user_stmt);
-	*/
-
-	/* Desired code. */
+	/* Check if user table exists.  If not, create it. */
 	if (!DB::exists_table(db, Sql::get_query_check_for_user_table())) {
 		if (!DB::create_table(db, Sql::get_query_create_user_table())) {
-			std::cout << "Error: Creating user table failed.\n";
+			std::cout << "Error: creating user table failed.\n";
 			return 1;
 		}
 	}
-
-	/* No user table found.  So, create it. */
-	/*
-	if (rc != SQLITE_ROW) {
-		std::string create_user_table = Sql::get_query_create_user_table();
-		rc = sqlite3_prepare_v2(db, create_user_table.c_str(), -1, &check_user_stmt, 0);
-		rc = sqlite3_step(check_user_stmt);
-	}
-	*/
 	
-	/* Create user menu. */
-	std::vector<std::string> user_menu_options;
-	user_menu_options.push_back("Log in");
-	user_menu_options.push_back("Create user");
-	std::vector<std::unique_ptr<Menu_item>> user_menu;
-	for (int i = 0; i < user_menu_options.size(); ++i) {
-		user_menu.push_back(std::make_unique<Menu_item>(i, user_menu_options[i]));
-	}
+	auto user_menu = Menu::create("Log in", "Create user");
 
 	User logged_in_user;
 
@@ -168,29 +145,15 @@ int main()
 		}
 	}
 
-	/* Check if task table exists. */
-	std::string check_for_task_table = Sql::get_query_check_for_task_table();
-	sqlite3_stmt* check_task_stmt{nullptr};
-	rc = sqlite3_prepare_v2(db, check_for_task_table.c_str(), -1, &check_task_stmt, 0);
-	rc = sqlite3_step(check_task_stmt);
-
-	/* No task table was found.  So, create it. */
-	if (rc != SQLITE_ROW) {
-		std::string create_task_table = Sql::get_query_create_task_table();
-		rc = sqlite3_prepare_v2(db, create_task_table.c_str(), -1, &check_task_stmt, 0);
-		rc = sqlite3_step(check_task_stmt);
+	/* Check if task table exists.  If not, create it. */
+	if (!DB::exists_table(db, Sql::get_query_check_for_task_table())) {
+		if (!DB::create_table(db, Sql::get_query_create_task_table())) {
+			std::cout << "Error: creating task table failed\n";
+			return 1;
+		}
 	}
 
-	/* Create main menu. */
-	std::vector<std::string> main_menu_options;
-	main_menu_options.push_back("Create a new task");
-	main_menu_options.push_back("Show all tasks");
-	main_menu_options.push_back("Delete a task [Todo]");
-	main_menu_options.push_back("Exit program");
-	std::vector<std::unique_ptr<Menu_item>> main_menu;
-	for (int i = 0; i < main_menu_options.size(); ++i) {
-		main_menu.push_back(std::make_unique<Menu_item>(i, main_menu_options[i]));
-	}
+	auto main_menu = Menu::create("Create a new task", "Show all tasks", "Delete a task [ToDo]", "Exit program");
 
 	while (true) {
 
