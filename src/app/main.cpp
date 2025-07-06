@@ -75,11 +75,11 @@ int main()
 		std::string pw_hashed_encrypted_b64{Crypto::to_base64(pw_hashed_encrypted)};
 
 		/* Build 'select user' statement. */
-		SelectStmt<const char*> select_user_stmt = SelectStmt<const char*>::create()
+		auto select_user_stmt = SelectStmt<const char*>::create()
 				.setSqlQuery(Sql::get_query_select_user())
 				.prepare(db)
-				.addParam(1, QueryParam("text", username_encrypted_b64.c_str()))
-				.addParam(2, QueryParam("text", pw_hashed_encrypted_b64.c_str()))
+				.addParam(1, {"text", username_encrypted_b64.c_str()})
+				.addParam(2, {"text", pw_hashed_encrypted_b64.c_str()})
 				.build();
 
 		rc = sqlite3_step(select_user_stmt.stmt_);

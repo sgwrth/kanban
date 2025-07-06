@@ -33,7 +33,6 @@ public:
 	SelectStmt<T>& addParam(int position, QueryParam<T> parameter)
 	{
 		if (parameter.datatype_ == "text") {
-			std::cout << "Looking good.\n";
 			int rc = sqlite3_bind_text(this->stmt_, position, parameter.value_, -1, SQLITE_STATIC);
 		}
 		return *this;
