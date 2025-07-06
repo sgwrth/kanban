@@ -11,6 +11,7 @@
 #include "../utils/DB.h"
 #include "../utils/Input.h"
 #include "../utils/Menu.h"
+#include "../utils/SelectStmt.h"
 #include "../utils/Sql.h"
 #include "../utils/Text.h"
 #include "../../external/sqlite/sqlite3.h"
@@ -73,23 +74,25 @@ int main()
 		std::string pw_hashed_encrypted{Crypto::encrypt(pw_hashed)};
 		std::string pw_hashed_encrypted_b64{Crypto::to_base64(pw_hashed_encrypted)};
 
-		/* Fetching user from DB.  If user exists, get the 'username' column. */
-		std::string select_user = Sql::get_query_select_user();
-		sqlite3_stmt* select_user_stmt{nullptr};
-		rc = sqlite3_prepare_v2(db, select_user.c_str(), -1, &select_user_stmt, 0);
-		rc = sqlite3_bind_text(select_user_stmt, 1, username_encrypted_b64.c_str(), -1, SQLITE_STATIC);
-		rc = sqlite3_bind_text(select_user_stmt, 2, pw_hashed_encrypted_b64.c_str(), -1, SQLITE_STATIC);
-		rc = sqlite3_step(select_user_stmt);
+		/* Build 'select user' statement. */
+		SelectStmt<const char*> select_user_stmt = SelectStmt<const char*>::create()
+				.setSqlQuery(Sql::get_query_select_user())
+				.prepare(db)
+				.addParam(1, QueryParam("text", username_encrypted_b64.c_str()))
+				.addParam(2, QueryParam("text", pw_hashed_encrypted_b64.c_str()))
+				.build();
+
+		rc = sqlite3_step(select_user_stmt.stmt_);
 
 		/* Early return with error code in case login failed. */
 		if (rc != SQLITE_ROW) {
 			std::cout << "Login failed.  Good bye.\n";
-			return -1;
+			return 1;
 		}
 
 		/* Retrieve user's data and assign to local user struct. */
-		int user_id_from_db = (int) sqlite3_column_int(select_user_stmt, 0);
-		std::string username_from_db_b64 = (const char*) sqlite3_column_text(select_user_stmt, 1);
+		int user_id_from_db = (int) sqlite3_column_int(select_user_stmt.stmt_, 0);
+		std::string username_from_db_b64 = (const char*) sqlite3_column_text(select_user_stmt.stmt_, 1);
 		/* Decrypt user's data. */
 		std::string username_from_db_raw_binary{Crypto::to_raw_binary(username_from_db_b64)};
 		std::string username_from_db_decrypted{Crypto::decrypt(username_from_db_raw_binary)};
