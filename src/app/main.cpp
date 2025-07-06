@@ -2,6 +2,7 @@
 #include <libgen.h> /* Needed for dirname function. */
 #include <memory>
 #include <string>
+#include <type_traits>
 #include <unistd.h>
 #include <vector>
 #include "../app/Menu_item.h"
@@ -75,11 +76,11 @@ int main()
 		std::string pw_hashed_encrypted_b64{Crypto::to_base64(pw_hashed_encrypted)};
 
 		/* Build 'select user' statement. */
-		auto select_user_stmt = SelectStmt<const char*>::create()
-				.setSqlQuery(Sql::get_query_select_user())
+		auto select_user_stmt = SelectStmt::create()
+				.set_sql_query(Sql::get_query_select_user())
 				.prepare(db)
-				.addParam(1, {"text", username_encrypted_b64.c_str()})
-				.addParam(2, {"text", pw_hashed_encrypted_b64.c_str()})
+				.add_param(1, QueryParam(username_encrypted_b64))
+				.add_param(2, QueryParam(pw_hashed_encrypted_b64))
 				.build();
 
 		rc = sqlite3_step(select_user_stmt.stmt_);

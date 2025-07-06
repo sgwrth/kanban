@@ -1,16 +1,14 @@
 #ifndef QUERYPARAM_H
 #define QUERYPARAM_H
 #include <string>
+#include <variant>
 
-template<typename T>
 class QueryParam {
 public:
-	std::string datatype_;
-	T value_;
+	std::variant<std::string, int> value_;
 
-	QueryParam(std::string datatype, T value)
-		: datatype_{datatype}, value_{value}
-	{}
+	QueryParam(std::string value) : value_{value} {}
+	QueryParam(int value) : value_{value} {}
 };
 
 #endif

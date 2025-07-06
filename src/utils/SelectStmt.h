@@ -3,42 +3,45 @@
 #include <iostream>
 #include <string>
 #include <unordered_map>
+#include <variant>
 #include "../utils/QueryParam.h"
 #include "../../external/sqlite/sqlite3.h"
 
-template<typename T>
 class SelectStmt {
 public:
 	sqlite3_stmt* stmt_{};
 	std::string sql_query_{};
-	std::unordered_map<int, QueryParam<T>> parameters{};
+	std::unordered_map<int, QueryParam> parameters{};
 
-	static SelectStmt<T> create()
+	static SelectStmt create()
 	{
-		return SelectStmt<T>();
+		return SelectStmt();
 	}
 
-	SelectStmt<T>& setSqlQuery(std::string sql_query)
+	SelectStmt& set_sql_query(std::string sql_query)
 	{
 		this->sql_query_ = sql_query;
 		return *this;
 	}
 
-	SelectStmt<T>& prepare(sqlite3* db)
+	SelectStmt& prepare(sqlite3* db)
 	{
 		int rc = sqlite3_prepare_v2(db, this->sql_query_.c_str(), -1, &this->stmt_, 0); /* stmt_ by ref. */
 		return *this;
 	}
 
-	SelectStmt<T>& addParam(int position, QueryParam<T> parameter)
+	SelectStmt& add_param(const int pos, const QueryParam& param)
 	{
-		if (parameter.datatype_ == "text") {
-			int rc = sqlite3_bind_text(this->stmt_, position, parameter.value_, -1, SQLITE_STATIC);
-		}
+		std::visit([&](auto&& value) { /* &: Capture 'this' by reference. */
+			using V = std::decay_t<decltype(value)>; /* Get stripped-down type of value. */
+			if constexpr (std::is_same_v<V, std::string>) {
+				int rc = sqlite3_bind_text(this->stmt_, pos, value.c_str(), -1, SQLITE_TRANSIENT);
+			}
+		}, param.value_);
 		return *this;
 	}
 
-	SelectStmt<T>& build()
+	SelectStmt& build()
 	{
 		return *this;
 	}
