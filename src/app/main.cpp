@@ -51,8 +51,10 @@ int main()
 		}
 	}
 	
-	/* (Replace with Builder pattern.) */
-	auto user_menu = Menu::create("Log in", "Create user");
+	Menu user_menu = Menu::create()
+			.add_option("Log in")
+			.add_option("Create user")
+			.build();
 
 	User logged_in_user;
 
@@ -77,7 +79,7 @@ int main()
 		std::string pw_hashed_encrypted_b64{Crypto::to_base64(pw_hashed_encrypted)};
 
 		/* Build 'select user' statement. */
-		auto select_user_stmt = QueryStmt::create()
+		QueryStmt select_user_stmt = QueryStmt::create()
 				.set_sql_query(Sql::get_query_select_user())
 				.prepare(db)
 				.add_param(1, QueryParam(username_encrypted_b64))
@@ -123,7 +125,7 @@ int main()
 		std::string pw_hashed_encrypted_b64{Crypto::to_base64(pw_hashed_encrypted)};
 
 		/* Create user. */
-		auto insert_user_stmt = QueryStmt::create()
+		QueryStmt insert_user_stmt = QueryStmt::create()
 				.set_sql_query(Sql::get_query_insert_user())
 				.prepare(db)
 				.add_param(1, QueryParam(username_encrypted_b64))
@@ -135,7 +137,7 @@ int main()
 		if (rc = SQLITE_DONE) {
 
 			/* Fetch user from DB. */
-			auto fetch_user_stmt = QueryStmt::create()
+			QueryStmt fetch_user_stmt = QueryStmt::create()
 					.set_sql_query(Sql::get_query_fetch_user())
 					.prepare(db)
 					.add_param(1, QueryParam(username_encrypted_b64))
@@ -163,8 +165,12 @@ int main()
 		}
 	}
 
-	/* (Replace with Builder pattern.) */
-	auto main_menu = Menu::create("Create a new task", "Show all tasks", "Delete a task [ToDo]", "Exit program");
+	Menu main_menu = Menu::create()
+			.add_option("Create a new task")
+			.add_option("Show all tasks")
+			.add_option("Delete a task [ToDo]")
+			.add_option("Exit program")
+			.build();
 
 	while (true) {
 
@@ -189,7 +195,7 @@ int main()
 			std::string task_descr_b64{Crypto::to_base64(task_descr_raw_binary)};
 
 			/* Insert task. */
-			auto insert_task_stmt = QueryStmt::create()
+			QueryStmt insert_task_stmt = QueryStmt::create()
 					.set_sql_query(Sql::get_query_insert_task())
 					.prepare(db)
 					.add_param(1, QueryParam(task_name_b64))
@@ -198,14 +204,13 @@ int main()
 					.build();
 
 			rc = sqlite3_step(insert_task_stmt.stmt_);
-			std::cout << "[Insert task rc: " << rc << "]\n";
 		}
 
 		/* Show all tasks by user. */
 		if (choice == "1") {
 
 			/* Fetch tasks from DB. */
-			auto select_tasks_stmt = QueryStmt::create()
+			QueryStmt select_tasks_stmt = QueryStmt::create()
 					.set_sql_query(Sql::get_query_select_all_tasks())
 					.prepare(db)
 					.add_param(1, QueryParam(logged_in_user.id))
@@ -214,7 +219,7 @@ int main()
 			/* Create vector of tasks. */
 			std::vector<Task> all_tasks;
 			while (sqlite3_step(select_tasks_stmt.stmt_) == SQLITE_ROW) {
-				auto task = Task::create()
+				Task task = Task::create()
 						.set("id", select_tasks_stmt.stmt_, 0)
 						.set("name", select_tasks_stmt.stmt_, 1) /* Decrypted. */
 						.set("description", select_tasks_stmt.stmt_, 2) /* Decrypted. */
@@ -224,7 +229,6 @@ int main()
 						.build();
 				all_tasks.push_back(task);
 			};
-			std::cout << "Number of tasks: " << all_tasks.size() << '\n';
 
 			/* Output all tasks. */
 			for (int i = 0; i < all_tasks.size(); ++i) {

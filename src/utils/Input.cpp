@@ -4,19 +4,21 @@
 #include <stdexcept>
 #include <string>
 #include <vector>
+#include "./Menu.h"
 #include "../app/Menu_item.h"
 
 std::string Input::get_menu_option_choice(
-		const std::vector<std::unique_ptr<Menu_item>>& menu,
+		// const std::vector<std::unique_ptr<Menu_item>>& menu,
+		const Menu menu,
 		const std::string& menu_name
 )
 {
 	std::string user_choice {};
 	do {
 		std::cout << menu_name << ":\n";
-		for (const auto& option : menu) {
-			std::cout << "[" << option->get_number() << "] "
-					<< option->get_name() + "\n";
+		for (const auto& option : menu.options_) {
+			std::cout << "[" << option.get_number() << "] "
+					<< option.get_name() + "\n";
 		}
 		std::cout << "Choice: ";
 		std::getline(std::cin, user_choice);
@@ -26,7 +28,8 @@ std::string Input::get_menu_option_choice(
 
 bool Input::is_valid_menu_option(
 		const std::string& input,
-		const std::vector<std::unique_ptr<Menu_item>>& menu
+		// const std::vector<std::unique_ptr<Menu_item>>& menu
+		const Menu menu
 )
 {
 	try {
@@ -34,7 +37,7 @@ bool Input::is_valid_menu_option(
 		int choice = std::stoi(input, &input_size);
 		return (input_size == input.length())
 				&& (choice >= 0)
-				&& (choice < menu.size());
+				&& (choice < menu.options_.size());
 	} catch (const std::invalid_argument&) {
 		return false;
 	} catch (const std::out_of_range&) {

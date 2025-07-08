@@ -5,7 +5,7 @@ Menu_item::Menu_item(int number, std::string name)
 	: number_{number}
 	, name_{name} {}
 
-int Menu_item::get_number()
+int Menu_item::get_number() const
 {
 	return number_;
 }
@@ -15,7 +15,7 @@ void Menu_item::set_number(int number)
 	number_ = number;
 }
 
-std::string Menu_item::get_name()
+std::string Menu_item::get_name() const
 {
 	return name_;
 }
