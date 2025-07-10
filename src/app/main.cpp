@@ -1,9 +1,7 @@
 #include <iostream>
-#include <libgen.h> /* Needed for dirname function. */
 #include <memory>
 #include <string>
 #include <type_traits>
-#include <unistd.h>
 #include <vector>
 #include "../app/Credentials.h"
 #include "../app/Menu_item.h"
@@ -15,26 +13,15 @@
 #include "../utils/Menu.h"
 #include "../utils/QueryStmt.h"
 #include "../utils/Sql.h"
+#include "../utils/System.h"
 #include "../utils/Text.h"
 #include "../../external/sqlite/sqlite3.h"
 
 int main()
 {
-	/*
-	 * Non-portable, Linux-specific way of getting the directory
-	 * in which the binary is located.  This ensures that the DB
-	 * will be created in that same directory, not the directory
-	 * from which the binary is called for execution.
-	 */
-	auto buffer = std::vector<char>(1024);
-	const ssize_t len = readlink("/proc/self/exe", buffer.data(), buffer.size() - 1);
-	buffer[len] = '\0'; /* Terminate the path. */
-	const std::string binary_path{buffer.data()}; /* Create a copy. */
-	const std::string binary_dir{dirname(buffer.data())}; /* 'dirname' modifies buffer.data() in place. */
-
 	/* Prepare filepath for DB creation. */
 	constexpr const char* db_filename = "data.db";
-	const std::string db_fullpath = binary_dir + '/' + db_filename;
+	const std::string db_fullpath = System::get_binary_dir() + '/' + db_filename;
 
 	/* Open (or, if it doesn't exist) create DB. */
 	sqlite3* db{nullptr};

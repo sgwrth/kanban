@@ -22,6 +22,7 @@ add_executable(todosqlite
 	src/utils/QueryParam.cpp
 	src/utils/QueryStmt.cpp
 	src/utils/Sql.cpp
+	src/utils/System.cpp
 	src/utils/Text.cpp
 )
 
