@@ -12,6 +12,7 @@ find_package(OpenSSL REQUIRED)
 add_executable(todosqlite
 	external/sqlite/sqlite3.c
 	src/app/main.cpp
+	src/app/Credentials.cpp
 	src/app/Menu_item.cpp
 	src/core/Task.cpp
 	src/utils/Crypto.cpp

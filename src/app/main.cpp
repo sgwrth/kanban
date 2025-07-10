@@ -5,6 +5,7 @@
 #include <type_traits>
 #include <unistd.h>
 #include <vector>
+#include "../app/Credentials.h"
 #include "../app/Menu_item.h"
 #include "../core/Task.h"
 #include "../core/User.h"
@@ -64,26 +65,16 @@ int main()
 	/* Log in. */
 	if (user_choice == "0") {
 
-		/* Enter credentials.  (Also, extract this.) */
-		std::cout << "Enter username: ";
-		std::string username{};
-		std::getline(std::cin, username);
-		std::string pw_cstring = getpass("Enter password: ");
-		std::string password{pw_cstring};
-		std::string pw_hashed{Crypto::sha256(password)};
-
-		/* Encrypt username and password. */
-		std::string username_encrypted{Crypto::encrypt(username)};
-		std::string username_encrypted_b64{Crypto::to_base64(username_encrypted)};
-		std::string pw_hashed_encrypted{Crypto::encrypt(pw_hashed)};
-		std::string pw_hashed_encrypted_b64{Crypto::to_base64(pw_hashed_encrypted)};
+		/* Enter and encrypt credentials. */
+		Credentials creds = Credentials::get_creds_from_input();
+		Credentials creds_encrypted_b64 = Crypto::encrypt_creds(creds);
 
 		/* Build 'select user' statement. */
 		QueryStmt select_user_stmt = QueryStmt::create()
 				.set_sql_query(Sql::get_query_select_user())
 				.prepare(db)
-				.add_param(1, QueryParam(username_encrypted_b64))
-				.add_param(2, QueryParam(pw_hashed_encrypted_b64))
+				.add_param(1, QueryParam(creds_encrypted_b64.username_))
+				.add_param(2, QueryParam(creds_encrypted_b64.pw_hashed_))
 				.build();
 
 		rc = sqlite3_step(select_user_stmt.stmt_);
@@ -111,44 +102,38 @@ int main()
 	/* Create user. */
 	if (user_choice == "1") {
 
-		/* Enter credentials.  Also, extract this. */
-		std::cout << "Enter username: ";
-		std::string username{};
-		std::getline(std::cin, username);
-		std::string pw_cstring = getpass("Enter password: ");
-		std::string pw{pw_cstring};
-		std::string pw_hashed{Crypto::sha256(pw)};
-		/* Encrypt username and password. */
-		std::string username_encrypted{Crypto::encrypt(username)};
-		std::string username_encrypted_b64{Crypto::to_base64(username_encrypted)};
-		std::string pw_hashed_encrypted{Crypto::encrypt(pw_hashed)};
-		std::string pw_hashed_encrypted_b64{Crypto::to_base64(pw_hashed_encrypted)};
+		/* Enter credentials. (Also, extract this.) */
+		Credentials creds = Credentials::get_creds_from_input();
+		Credentials creds_encrypted_b64 = Crypto::encrypt_creds(creds);
 
 		/* Create user. */
 		QueryStmt insert_user_stmt = QueryStmt::create()
 				.set_sql_query(Sql::get_query_insert_user())
 				.prepare(db)
-				.add_param(1, QueryParam(username_encrypted_b64))
-				.add_param(2, QueryParam(pw_hashed_encrypted_b64))
+				.add_param(1, QueryParam(creds_encrypted_b64.username_))
+				.add_param(2, QueryParam(creds_encrypted_b64.pw_hashed_))
 				.build();
 
 		rc = sqlite3_step(insert_user_stmt.stmt_);
 
-		if (rc = SQLITE_DONE) {
+		if (rc == SQLITE_DONE) {
 
 			/* Fetch user from DB. */
 			QueryStmt fetch_user_stmt = QueryStmt::create()
 					.set_sql_query(Sql::get_query_fetch_user())
 					.prepare(db)
-					.add_param(1, QueryParam(username_encrypted_b64))
+					.add_param(1, QueryParam(creds_encrypted_b64.username_))
 					.build();
 
 			rc = sqlite3_step(fetch_user_stmt.stmt_);
 
-			/* Assign user ID from DB to local user struct member. */
+			/* Assign user ID and username from DB to local user struct member. */
 			int user_id_from_db = (int) sqlite3_column_int(fetch_user_stmt.stmt_, 0);
+			std::string username_encrypted = (const char*) sqlite3_column_text(fetch_user_stmt.stmt_, 1);
+			std::string username = Crypto::decrypt_from_b64(username_encrypted);
 			logged_in_user.username = username;
 			logged_in_user.id = user_id_from_db;
+
 			std::cout << "New user [ID " << logged_in_user.id << "] created.  "
 					<< "Hello, " << logged_in_user.username << '\n';
 		} else {
@@ -160,7 +145,7 @@ int main()
 	/* Check if task table exists.  If not, create it. */
 	if (!DB::exists_table(db, Sql::get_query_check_for_task_table())) {
 		if (!DB::create_table(db, Sql::get_query_create_task_table())) {
-			std::cout << "Error: creating task table failed\n";
+			std::cout << "Error: creating task table failed.\n";
 			return 1;
 		}
 	}

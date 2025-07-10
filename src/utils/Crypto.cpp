@@ -8,6 +8,7 @@
 #include <iomanip>
 #include <openssl/sha.h>
 #include <sstream>
+#include "../app/Credentials.h"
 #include "../secret/KeyIV.h"
 
 std::string Crypto::sha256(const std::string& str)
@@ -91,4 +92,18 @@ std::string Crypto::to_raw_binary(const std::string& base64)
 			)
 	);
 	return raw_binary;
+}
+
+Credentials Crypto::encrypt_creds(Credentials creds)
+{
+	std::string username_encrypted{Crypto::encrypt(creds.username_)};
+	std::string username_encrypted_b64{Crypto::to_base64(username_encrypted)};
+	std::string pw_hashed_encrypted{Crypto::encrypt(creds.pw_hashed_)};
+	std::string pw_hashed_encrypted_b64{Crypto::to_base64(pw_hashed_encrypted)};
+	return Credentials(username_encrypted_b64, pw_hashed_encrypted_b64);
+}
+
+std::string Crypto::decrypt_from_b64(std::string base_64)
+{
+	return Crypto::decrypt(Crypto::to_raw_binary(base_64));
 }
