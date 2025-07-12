@@ -15,3 +15,13 @@ void Output::print_tasks(std::vector<Task>& tasks)
 				<< Text::crop_task_name(tasks[i].get_name()) << '\n';
 	}
 }
+
+void Output::print_task(Task& task)
+{
+	std::cout << "Task ID:\t" << task.get_id() << '\n'
+			<< "Created at:\t" << task.get_created_at() << '\n'
+			<< "Priority:\t" << Text::priority_to_string(task.get_priority()) << '\n'
+			<< "Name:\t\t" << task.get_name() << '\n'
+			<< "Description:\n"
+			<< task.get_description() << '\n';
+}

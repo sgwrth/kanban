@@ -89,6 +89,15 @@ std::string Sql::get_query_select_all_tasks()
 	return std::string(sql);
 }
 
+std::string Sql::get_query_select_task()
+{
+	const char* sql = R"(
+		SELECT * FROM task AS t
+		WHERE t.id = ?;
+	)";
+	return std::string(sql);
+}
+
 std::string Sql::get_query_select_user()
 {
 	const char* sql = R"(

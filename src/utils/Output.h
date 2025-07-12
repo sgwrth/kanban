@@ -6,6 +6,7 @@
 class Output {
 public:
 	static void print_tasks(std::vector<Task>& tasks);
+	static void print_task(Task& task);
 };
 
 #endif

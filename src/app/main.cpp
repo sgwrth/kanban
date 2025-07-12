@@ -209,6 +209,35 @@ int main()
 			Output::print_tasks(all_tasks);
 		}
 
+		if (selected_option == SELECT_TASK) {
+
+			std::string task_number{};
+			std::cout << "Enter task #: ";
+			std::getline(std::cin, task_number);
+
+			/* Fetch task from DB. */
+			QueryStmt select_task_stmt = QueryStmt::create()
+					.set_sql_query(Sql::get_query_select_task())
+					.prepare(db)
+					.add_param(1, QueryParam(std::stoi(task_number)))
+					.build();
+
+			if (sqlite3_step(select_task_stmt.stmt_) != SQLITE_ROW) {
+				std::cout << "Error fetching task\n";
+				return 1;
+			}
+			Task task = Task::create()
+				.set("id", select_task_stmt.stmt_, 0)
+				.set("name", select_task_stmt.stmt_, 1) /* Decrypted. */
+				.set("description", select_task_stmt.stmt_, 2) /* Decrypted. */
+				.set("priority", select_task_stmt.stmt_, 3) /* From int. */
+				.set("user_id", select_task_stmt.stmt_, 4)
+				.set("created_at", select_task_stmt.stmt_, 5)
+				.build();
+
+			Output::print_task(task);
+		}
+
 		/* Quit program. */
 		if (selected_option == EXIT) {
 			sqlite3_close(db);

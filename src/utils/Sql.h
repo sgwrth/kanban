@@ -12,6 +12,7 @@ public:
 	static std::string get_query_insert_task();
 	static std::string get_query_insert_user();
 	static std::string get_query_select_all_tasks();
+	static std::string get_query_select_task();
 	static std::string get_query_select_user();
 };
 
