@@ -21,10 +21,10 @@
 int main()
 {
 	/* Prepare filepath for DB creation. */
-	constexpr const char* db_filename = "data.db";
+	std::string db_filename{"data.db"};
 	const std::string db_fullpath = System::get_binary_dir() + '/' + db_filename;
 
-	/* Open (or, if it doesn't exist,) create DB. */
+	/* Open or, if it doesn't exist, create DB. */
 	sqlite3* db{nullptr};
 	if (sqlite3_open(db_fullpath.c_str(), &db) != SQLITE_OK) {
 		std::cerr << "Could not open DB: " << sqlite3_errmsg(db) << '\n';
@@ -37,18 +37,22 @@ int main()
 		}
 	}
 	
+	/* User menu. */
+	const std::string LOG_IN{"Log in"};
+	const std::string CREATE_USER{"Create user"};
+
 	Menu user_menu = Menu::create()
-			.add_option("Log in")
-			.add_option("Create user")
+			.add_option(LOG_IN)
+			.add_option(CREATE_USER)
 			.build();
 
 	User logged_in_user;
 
 	/* Show user menu and get user's choice. */
 	std::string user_choice = Input::get_menu_option_choice(user_menu, "User menu"); 
+	std::string selected_option_user_menu{Input::get_selected_option_name(std::stoi(user_choice), user_menu)};	
 
-	/* Log in. */
-	if (user_choice == "0") {
+	if (selected_option_user_menu == LOG_IN) {
 
 		Credentials creds = Credentials::get_creds_from_input();
 		Credentials creds_encrypted_b64 = Crypto::encrypt_creds(creds);
@@ -60,10 +64,8 @@ int main()
 				.add_param(2, QueryParam(creds_encrypted_b64.pw_hashed_))
 				.build();
 
-		int rc = sqlite3_step(select_user_stmt.stmt_);
-
 		/* Early return with error code in case login failed. */
-		if (rc != SQLITE_ROW) {
+		if (sqlite3_step(select_user_stmt.stmt_) != SQLITE_ROW) {
 			std::cout << "Login failed.  Good bye.\n";
 			return 1;
 		}
@@ -83,8 +85,7 @@ int main()
 
 	}
 
-	/* Create user. */
-	if (user_choice == "1") {
+	if (selected_option_user_menu == CREATE_USER) {
 
 		Credentials creds = Credentials::get_creds_from_input();
 		Credentials creds_encrypted_b64 = Crypto::encrypt_creds(creds);
@@ -130,11 +131,19 @@ int main()
 		}
 	}
 
+	/* Main menu. */
+	const std::string CREATE_TASK{"Create a new task"};
+	const std::string SHOW_TASKS{"Show all tasks"};
+	const std::string SELECT_TASK{"Select task [ToDo]"};
+	const std::string DELETE_TASK{"Delete a task [ToDo]"};
+	const std::string EXIT{"Exit program"};
+
 	Menu main_menu = Menu::create()
-			.add_option("Create a new task")
-			.add_option("Show all tasks")
-			.add_option("Delete a task [ToDo]")
-			.add_option("Exit program")
+			.add_option(CREATE_TASK)
+			.add_option(SHOW_TASKS)
+			.add_option(SELECT_TASK)
+			.add_option(DELETE_TASK)
+			.add_option(EXIT)
 			.build();
 
 	while (true) {
@@ -142,8 +151,10 @@ int main()
 		/* Show menu and get user's choice. */
 		std::string choice = Input::get_menu_option_choice(main_menu, "Main menu");
 
-		/* Store task in DB. */
-		if (choice == "0") {
+		/* Get name of selected option. */
+		std::string selected_option{Input::get_selected_option_name(std::stoi(choice), main_menu)};	
+		
+		if (selected_option == CREATE_TASK) {
 
 			/* Get task data from user. */
 			std::cout << "Enter task name (max. 16 characters):\n";
@@ -171,8 +182,7 @@ int main()
 			int rc = sqlite3_step(insert_task_stmt.stmt_);
 		}
 
-		/* Show all tasks by user. */
-		if (choice == "1") {
+		if (selected_option == SHOW_TASKS) {
 
 			/* Fetch tasks from DB. */
 			QueryStmt select_tasks_stmt = QueryStmt::create()
@@ -200,7 +210,7 @@ int main()
 		}
 
 		/* Quit program. */
-		if (choice == "3") {
+		if (selected_option == EXIT) {
 			sqlite3_close(db);
 			return 0;
 		}

@@ -101,13 +101,13 @@ Task& Task::set(std::string member, sqlite3_stmt* stmt, int column)
 		int priority = (int) sqlite3_column_int(stmt, column);
 		switch (priority) {
 		case 0:
-			set_priority(Priority::low);
+			set_priority(Priority::LOW);
 			break;
 		case 1:
-			set_priority(Priority::medium);
+			set_priority(Priority::MEDIUM);
 			break;
 		case 2:
-			set_priority(Priority::high);
+			set_priority(Priority::HIGH);
 			break;
 		default:
 			std::cout << "Error: invalid priority.\n";

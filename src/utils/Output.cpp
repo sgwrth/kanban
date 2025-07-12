@@ -11,7 +11,7 @@ void Output::print_tasks(std::vector<Task>& tasks)
 		std::cout << "Task #"
 				<< tasks[i].get_id() << ":\t"
 				<< tasks[i].get_created_at() << '\t'
-				<< Text::crop_task_name(tasks[i].get_name()) << '\t'
-				<< Text::priority_to_string(tasks[i].get_priority()) << '\n';
+				<< '[' << Text::priority_to_string(tasks[i].get_priority()) << "]\t"
+				<< Text::crop_task_name(tasks[i].get_name()) << '\n';
 	}
 }

@@ -1,34 +1,40 @@
 #include "Text.h"
 #include <array>
 #include <string>
+#define TASK_NAME_AND_ELLIPSIS_LEN 19
+#define ELLIPSIS_LEN 3
+#define CROPPED_TASK_NAME_LEN TASK_NAME_AND_ELLIPSIS_LEN - ELLIPSIS_LEN
+#define ELLIPSIS_CHAR '.'
 
-std::string Text::crop_task_name(std::string task_name)
+std::string Text::crop_task_name(const std::string& task_name)
 {
-	constexpr const int cropped_task_name_len = 19;
-	constexpr const int ellipsis_len = 3;
-	constexpr const char ellipsis_char = '.';
-	if (task_name.size() <= (cropped_task_name_len - ellipsis_len)) {
+	if (task_name.size() <= (CROPPED_TASK_NAME_LEN)) {
 		return task_name;
 	}
-	std::array<char, cropped_task_name_len> cropped_task_name{};
-	for (int i = 0; i < (cropped_task_name_len - ellipsis_len); ++i) {
+	std::array<char, TASK_NAME_AND_ELLIPSIS_LEN> cropped_task_name{};
+
+	/* Copy defined number of chars of task name. */
+	for (int i = 0; i < (CROPPED_TASK_NAME_LEN); ++i) {
 		cropped_task_name[i] = task_name[i];
 	}
-	for (int i = (cropped_task_name_len - ellipsis_len); i < cropped_task_name_len; ++i) {
-		cropped_task_name[i] = ellipsis_char;
+
+	/* Add ellipsis. */
+	for (int i = (CROPPED_TASK_NAME_LEN); i < TASK_NAME_AND_ELLIPSIS_LEN; ++i) {
+		cropped_task_name[i] = ELLIPSIS_CHAR;
 	}
+
 	return std::string(cropped_task_name.data(), cropped_task_name.size());
 }
 
 std::string Text::priority_to_string(const Priority& priority)
 {
 	switch (priority) {
-	case Priority::low:
-		return "low";
-	case Priority::medium:
-		return "medium";
-	case Priority::high:
-		return "high";
+	case Priority::LOW:
+		return "Low";
+	case Priority::MEDIUM:
+		return "Mid";
+	case Priority::HIGH:
+		return "High";
 	default:
 		return "Error: invalid priority value.";
 	}

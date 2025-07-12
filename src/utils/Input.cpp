@@ -26,11 +26,7 @@ std::string Input::get_menu_option_choice(
 	return user_choice;
 }
 
-bool Input::is_valid_menu_option(
-		const std::string& input,
-		// const std::vector<std::unique_ptr<Menu_item>>& menu
-		const Menu menu
-)
+bool Input::is_valid_menu_option(const std::string& input, const Menu& menu)
 {
 	try {
 		std::size_t input_size;
@@ -44,4 +40,15 @@ bool Input::is_valid_menu_option(
 		return false;
 	}
 }
+std::string Input::get_selected_option_name(const int choice, const Menu& menu)
+{
+	std::string selected_option{};
+	for (const auto& menu_item : menu) {
+		if (menu_item.get_number() == choice) {
+			return menu_item.get_name();
+		}
+	}
+	return selected_option;
+}
+
 
