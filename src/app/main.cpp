@@ -11,6 +11,7 @@
 #include "../utils/DB.h"
 #include "../utils/Input.h"
 #include "../utils/Menu.h"
+#include "../utils/Output.h"
 #include "../utils/QueryStmt.h"
 #include "../utils/Sql.h"
 #include "../utils/System.h"
@@ -23,15 +24,12 @@ int main()
 	constexpr const char* db_filename = "data.db";
 	const std::string db_fullpath = System::get_binary_dir() + '/' + db_filename;
 
-	/* Open (or, if it doesn't exist) create DB. */
+	/* Open (or, if it doesn't exist,) create DB. */
 	sqlite3* db{nullptr};
-	int rc = sqlite3_open(db_fullpath.c_str(), &db);
-	if (rc != SQLITE_OK) {
+	if (sqlite3_open(db_fullpath.c_str(), &db) != SQLITE_OK) {
 		std::cerr << "Could not open DB: " << sqlite3_errmsg(db) << '\n';
-		return rc;
 	}
 
-	/* Check if user table exists.  If not, create it. */
 	if (!DB::exists_table(db, Sql::get_query_check_for_user_table())) {
 		if (!DB::create_table(db, Sql::get_query_create_user_table())) {
 			std::cout << "Error: creating user table failed.\n";
@@ -52,11 +50,9 @@ int main()
 	/* Log in. */
 	if (user_choice == "0") {
 
-		/* Enter and encrypt credentials. */
 		Credentials creds = Credentials::get_creds_from_input();
 		Credentials creds_encrypted_b64 = Crypto::encrypt_creds(creds);
 
-		/* Build 'select user' statement. */
 		QueryStmt select_user_stmt = QueryStmt::create()
 				.set_sql_query(Sql::get_query_select_user())
 				.prepare(db)
@@ -64,7 +60,7 @@ int main()
 				.add_param(2, QueryParam(creds_encrypted_b64.pw_hashed_))
 				.build();
 
-		rc = sqlite3_step(select_user_stmt.stmt_);
+		int rc = sqlite3_step(select_user_stmt.stmt_);
 
 		/* Early return with error code in case login failed. */
 		if (rc != SQLITE_ROW) {
@@ -75,6 +71,7 @@ int main()
 		/* Retrieve user's data and assign to local user struct. */
 		int user_id_from_db = (int) sqlite3_column_int(select_user_stmt.stmt_, 0);
 		std::string username_from_db_b64 = (const char*) sqlite3_column_text(select_user_stmt.stmt_, 1);
+
 		/* Decrypt user's data. */
 		std::string username_from_db_raw_binary{Crypto::to_raw_binary(username_from_db_b64)};
 		std::string username_from_db_decrypted{Crypto::decrypt(username_from_db_raw_binary)};
@@ -89,11 +86,9 @@ int main()
 	/* Create user. */
 	if (user_choice == "1") {
 
-		/* Enter credentials. (Also, extract this.) */
 		Credentials creds = Credentials::get_creds_from_input();
 		Credentials creds_encrypted_b64 = Crypto::encrypt_creds(creds);
 
-		/* Create user. */
 		QueryStmt insert_user_stmt = QueryStmt::create()
 				.set_sql_query(Sql::get_query_insert_user())
 				.prepare(db)
@@ -101,11 +96,10 @@ int main()
 				.add_param(2, QueryParam(creds_encrypted_b64.pw_hashed_))
 				.build();
 
-		rc = sqlite3_step(insert_user_stmt.stmt_);
+		int rc = sqlite3_step(insert_user_stmt.stmt_);
 
 		if (rc == SQLITE_DONE) {
 
-			/* Fetch user from DB. */
 			QueryStmt fetch_user_stmt = QueryStmt::create()
 					.set_sql_query(Sql::get_query_fetch_user())
 					.prepare(db)
@@ -129,7 +123,6 @@ int main()
 		}
 	}
 
-	/* Check if task table exists.  If not, create it. */
 	if (!DB::exists_table(db, Sql::get_query_check_for_task_table())) {
 		if (!DB::create_table(db, Sql::get_query_create_task_table())) {
 			std::cout << "Error: creating task table failed.\n";
@@ -175,7 +168,7 @@ int main()
 					.add_param(3, QueryParam(logged_in_user.id))
 					.build();
 
-			rc = sqlite3_step(insert_task_stmt.stmt_);
+			int rc = sqlite3_step(insert_task_stmt.stmt_);
 		}
 
 		/* Show all tasks by user. */
@@ -195,7 +188,7 @@ int main()
 						.set("id", select_tasks_stmt.stmt_, 0)
 						.set("name", select_tasks_stmt.stmt_, 1) /* Decrypted. */
 						.set("description", select_tasks_stmt.stmt_, 2) /* Decrypted. */
-						.set("priority", select_tasks_stmt.stmt_, 3)
+						.set("priority", select_tasks_stmt.stmt_, 3) /* From int. */
 						.set("user_id", select_tasks_stmt.stmt_, 4)
 						.set("created_at", select_tasks_stmt.stmt_, 5)
 						.build();
@@ -203,12 +196,7 @@ int main()
 			};
 
 			/* Output all tasks. */
-			for (int i = 0; i < all_tasks.size(); ++i) {
-				std::cout << "Task #" << all_tasks[i].get_id() << ":\t"
-						<< all_tasks[i].get_created_at() << '\t'
-						<< Text::crop_task_name(all_tasks[i].get_name()) << '\n';
-			}
-
+			Output::print_tasks(all_tasks);
 		}
 
 		/* Quit program. */

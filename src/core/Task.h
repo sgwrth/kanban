@@ -8,14 +8,14 @@ class Task {
 public:
 	Task(int id, std::string name, std::string description, int priority, int user_id, std::string created_at);
 
-	/* Getter and setter. */
+	/* Getters and setters. */
 	int get_id();
 	void set_id(int id);
 	std::string get_name();
 	void set_name(const std::string name);
 	std::string get_description();
 	void set_description(const std::string description);
-	Priority get_priority();
+	Priority get_priority() const;
 	void set_priority(const Priority priority);
 	int get_user_id();
 	void set_user_id(int id);

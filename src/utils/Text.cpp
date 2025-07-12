@@ -17,6 +17,19 @@ std::string Text::crop_task_name(std::string task_name)
 	for (int i = (cropped_task_name_len - ellipsis_len); i < cropped_task_name_len; ++i) {
 		cropped_task_name[i] = ellipsis_char;
 	}
-	const std::string str(cropped_task_name.data(), cropped_task_name.size());
-	return str;
+	return std::string(cropped_task_name.data(), cropped_task_name.size());
+}
+
+std::string Text::priority_to_string(const Priority& priority)
+{
+	switch (priority) {
+	case Priority::low:
+		return "low";
+	case Priority::medium:
+		return "medium";
+	case Priority::high:
+		return "high";
+	default:
+		return "Error: invalid priority value.";
+	}
 }

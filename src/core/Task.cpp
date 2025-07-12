@@ -44,7 +44,7 @@ void Task::set_description(const std::string description)
 	description_ = description;
 }
 
-Priority Task::get_priority()
+Priority Task::get_priority() const
 {
 	return priority_;
 }
