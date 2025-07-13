@@ -40,10 +40,12 @@ int main()
 	/* User menu. */
 	const std::string LOG_IN{"Log in"};
 	const std::string CREATE_USER{"Create user"};
+	const std::string EXIT_FROM_USER_MENU{"Exit"};
 
 	Menu user_menu = Menu::create()
 			.add_option(LOG_IN)
 			.add_option(CREATE_USER)
+			.add_option(EXIT_FROM_USER_MENU)
 			.build();
 
 	User logged_in_user;
@@ -122,6 +124,11 @@ int main()
 			std::cout << "Something went wrong.  Bye.\n";
 			return 1;
 		}
+	}
+
+	if (selected_option_user_menu == EXIT_FROM_USER_MENU) {
+		std::cout << "Bye.\n";
+		return 0;
 	}
 
 	if (!DB::exists_table(db, Sql::get_query_check_for_task_table())) {
