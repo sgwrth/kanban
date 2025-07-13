@@ -1,10 +1,7 @@
 #include <iostream>
-#include <memory>
 #include <string>
-#include <type_traits>
 #include <vector>
 #include "../app/Credentials.h"
-#include "../app/Menu_item.h"
 #include "../core/Task.h"
 #include "../core/User.h"
 #include "../utils/Crypto.h"
@@ -15,7 +12,6 @@
 #include "../utils/QueryStmt.h"
 #include "../utils/Sql.h"
 #include "../utils/System.h"
-#include "../utils/Text.h"
 #include "../../external/sqlite/sqlite3.h"
 
 int main()
