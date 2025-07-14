@@ -98,12 +98,11 @@ int main()
 	 	);
 		addstr("Press ENTER to continue.");
 
-		/* Using blocking getstr() in order to display above notice. */
+		/* Using blocking wgetnstr() in order to display above notice. */
 		noecho();
 		char buff[1];
-		getstr(buff);
+		wgetnstr(stdscr, buff, sizeof(buff) - 1);
 		echo();
-
 	}
 
 	if (selected_option_user_menu == CREATE_USER) {
@@ -147,6 +146,8 @@ int main()
 
 	if (selected_option_user_menu == EXIT_FROM_USER_MENU) {
 		std::cout << "Bye.\n";
+		sqlite3_close(db);
+		Tui::finish(0);
 		return 0;
 	}
 
@@ -179,16 +180,28 @@ int main()
 
 		/* Get name of selected option. */
 		std::string selected_option{Input::get_selected_option_name(std::stoi(choice), main_menu)};	
+
+		clear();
 		
 		if (selected_option == CREATE_TASK) {
 
-			/* Get task data from user. */
-			std::cout << "Enter task name (max. 16 characters):\n";
-			std::string task_name{};
-			std::getline(std::cin, task_name);
-			std::cout << "Enter task description:\n";
-			std::string task_description{};
-			std::getline(std::cin, task_description);
+			int y_pos = 0;
+			int x_pos = 0;
+
+			/* Get task name. */
+			addstr("Enter task name (max. 16 characters):");
+			move(++y_pos, 0);
+			char buffer_task_name[128];
+			wgetnstr(stdscr, buffer_task_name, sizeof(buffer_task_name) - 1);
+			std::string task_name{buffer_task_name};
+			move(++y_pos, 0);
+
+			/* Get task descripition. */
+			addstr("Enter task description:");
+			move(++y_pos, 0);
+			char buffer_task_description[1024];
+			wgetnstr(stdscr, buffer_task_description, sizeof(buffer_task_description) - 1);
+			std::string task_description{buffer_task_description};
 
 			/* Encrypt task name and description. */
 			std::string task_name_raw_binary{Crypto::encrypt(task_name)};

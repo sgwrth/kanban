@@ -20,7 +20,7 @@ Credentials Credentials::get_creds_from_input()
 	
 	addstr("Enter username: ");
 	std::string username{};
-	getstr(buffer_username);
+	wgetnstr(stdscr, buffer_username, sizeof(buffer_username) - 1);
 	username = buffer_username;
 
 	move(++y_pos, 0);
@@ -28,7 +28,7 @@ Credentials Credentials::get_creds_from_input()
 	addstr("Enter password: ");
 	std::string password;
 	noecho();
-	getstr(buffer_password);
+	wgetnstr(stdscr, buffer_password, sizeof(buffer_password) - 1);
 	echo();
 	password = buffer_password;
 	std::string pw_hashed{Crypto::sha256(password)};

@@ -20,7 +20,7 @@ std::string Input::get_menu_option_choice(const Menu menu,const std::string& men
 			printw("[%d] %s\n", option.get_number(), option.get_name().c_str());
 			move(++y_pos, 0);
 		}
-		getstr(buffer); // implicitly calls refresh()
+		wgetnstr(stdscr, buffer, sizeof(buffer) - 1); // implicitly calls refresh()
 		user_choice = buffer;
 	} while (!Input::is_valid_menu_option(user_choice, menu));
 	return user_choice;
