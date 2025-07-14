@@ -14,6 +14,7 @@ add_executable(todosqlite
 	src/app/main.cpp
 	src/app/Credentials.cpp
 	src/app/Menu_item.cpp
+	src/app/Tui.cpp
 	src/core/Task.cpp
 	src/utils/Crypto.cpp
 	src/utils/DB.cpp
@@ -31,6 +32,7 @@ target_link_libraries(todosqlite
 	PRIVATE
 	cryptopp
 	dl
+	ncurses
 	OpenSSL::SSL
 	pthread
 )

@@ -1,27 +1,27 @@
 #include "Input.h"
-#include <iostream>
-#include <memory>
+#include <curses.h>
 #include <stdexcept>
 #include <string>
 #include <vector>
 #include "./Menu.h"
 #include "../app/Menu_item.h"
 
-std::string Input::get_menu_option_choice(
-		// const std::vector<std::unique_ptr<Menu_item>>& menu,
-		const Menu menu,
-		const std::string& menu_name
-)
+std::string Input::get_menu_option_choice(const Menu menu,const std::string& menu_name)
 {
 	std::string user_choice {};
+	int y_pos{0};
+	int x_pos{0};
+	char buffer[2];
 	do {
-		std::cout << menu_name << ":\n";
+		clear();
+		y_pos = 0;
+		move(y_pos, 0);
 		for (const auto& option : menu.options_) {
-			std::cout << "[" << option.get_number() << "] "
-					<< option.get_name() + "\n";
+			printw("[%d] %s\n", option.get_number(), option.get_name().c_str());
+			move(++y_pos, 0);
 		}
-		std::cout << "Choice: ";
-		std::getline(std::cin, user_choice);
+		getstr(buffer); // implicitly calls refresh()
+		user_choice = buffer;
 	} while (!Input::is_valid_menu_option(user_choice, menu));
 	return user_choice;
 }

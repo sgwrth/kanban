@@ -1,10 +1,10 @@
+#include <csignal>
+#include <curses.h>
 #include <iostream>
-#include <memory>
 #include <string>
-#include <type_traits>
 #include <vector>
 #include "../app/Credentials.h"
-#include "../app/Menu_item.h"
+#include "../app/Tui.h"
 #include "../core/Task.h"
 #include "../core/User.h"
 #include "../utils/Crypto.h"
@@ -15,7 +15,6 @@
 #include "../utils/QueryStmt.h"
 #include "../utils/Sql.h"
 #include "../utils/System.h"
-#include "../utils/Text.h"
 #include "../../external/sqlite/sqlite3.h"
 
 int main()
@@ -50,6 +49,13 @@ int main()
 
 	User logged_in_user;
 
+	(void) initscr();
+	(void) signal(SIGINT, Tui::finish);	/* arrange interrupts to terminate */
+	keypad(stdscr, TRUE);			/* enable keyboard mapping */
+	(void) nonl();				/* tell curses not to do NL->CR/NL on output */
+	// (void) cbreak();			/* take input chars one at a time, no wait for \n */
+	(void) echo();
+	
 	/* Show user menu and get user's choice. */
 	std::string user_choice = Input::get_menu_option_choice(user_menu, "User menu"); 
 	std::string selected_option_user_menu{Input::get_selected_option_name(std::stoi(user_choice), user_menu)};	
@@ -82,8 +88,21 @@ int main()
 
 		logged_in_user.id = user_id_from_db;
 		logged_in_user.username = username_from_db_decrypted;
+		/*
 		std::cout << "Login successful!  Welcome, " << logged_in_user.username
 				<< " [ID: " << logged_in_user.id << "]\n";
+		*/
+		printw("Login successful!  Welcome, %s [ID: %d]\n",
+	 		logged_in_user.username.c_str(),
+	 		logged_in_user.id
+	 	);
+		addstr("Press ENTER to continue.");
+
+		/* Using blocking getstr() in order to display above notice. */
+		noecho();
+		char buff[1];
+		getstr(buff);
+		echo();
 
 	}
 
@@ -248,6 +267,7 @@ int main()
 		/* Quit program. */
 		if (selected_option == EXIT) {
 			sqlite3_close(db);
+			Tui::finish(0);
 			return 0;
 		}
 
