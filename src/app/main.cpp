@@ -18,16 +18,18 @@ int main()
 {
 	/* Prepare filepath for DB creation. */
 	std::string db_filename{"data.db"};
-	const std::string db_fullpath = System::get_binary_dir() + '/' + db_filename;
+	const std::string db_fullpath = System::get_binary_dir() + '/'
+		+ db_filename;
 
 	/* Open or, if it doesn't exist, create DB. */
 	sqlite3* db{nullptr};
 	if (sqlite3_open(db_fullpath.c_str(), &db) != SQLITE_OK) {
-		std::cerr << "Could not open DB: " << sqlite3_errmsg(db) << '\n';
+		std::cerr << "Could not open DB: " << sqlite3_errmsg(db)
+			<< '\n';
 	}
 
-	if (!DB::exists_table(db, Sql::get_query_check_for_user_table())) {
-		if (!DB::create_table(db, Sql::get_query_create_user_table())) {
+	if (!DB::exists_table(db, Sql::check_for_user_table())) {
+		if (!DB::create_table(db, Sql::create_user_table())) {
 			std::cout << "Error: creating user table failed.\n";
 			return 1;
 		}
@@ -47,8 +49,15 @@ int main()
 	User logged_in_user;
 
 	/* Show user menu and get user's choice. */
-	std::string user_choice = Input::get_menu_option_choice(user_menu, "User menu"); 
-	std::string selected_option_user_menu{Input::get_selected_option_name(std::stoi(user_choice), user_menu)};	
+	std::string user_choice =
+		Input::get_menu_option_choice(user_menu, "User menu"); 
+
+	/* Get selected option name. */
+	std::string selected_option_user_menu =
+		Input::get_selected_option_name(
+			std::stoi(user_choice),
+			user_menu
+		);	
 
 	if (selected_option_user_menu == LOG_IN) {
 
@@ -56,7 +65,7 @@ int main()
 		Credentials creds_encrypted_b64 = Crypto::encrypt_creds(creds);
 
 		QueryStmt select_user_stmt = QueryStmt::create()
-				.set_sql_query(Sql::get_query_select_user())
+				.set_sql_query(Sql::select_user())
 				.prepare(db)
 				.add_param(1, QueryParam(creds_encrypted_b64.username_))
 				.add_param(2, QueryParam(creds_encrypted_b64.pw_hashed_))
@@ -89,7 +98,7 @@ int main()
 		Credentials creds_encrypted_b64 = Crypto::encrypt_creds(creds);
 
 		QueryStmt insert_user_stmt = QueryStmt::create()
-				.set_sql_query(Sql::get_query_insert_user())
+				.set_sql_query(Sql::insert_user())
 				.prepare(db)
 				.add_param(1, QueryParam(creds_encrypted_b64.username_))
 				.add_param(2, QueryParam(creds_encrypted_b64.pw_hashed_))
@@ -100,7 +109,7 @@ int main()
 		if (rc == SQLITE_DONE) {
 
 			QueryStmt fetch_user_stmt = QueryStmt::create()
-					.set_sql_query(Sql::get_query_fetch_user())
+					.set_sql_query(Sql::fetch_user())
 					.prepare(db)
 					.add_param(1, QueryParam(creds_encrypted_b64.username_))
 					.build();
@@ -127,8 +136,8 @@ int main()
 		return 0;
 	}
 
-	if (!DB::exists_table(db, Sql::get_query_check_for_task_table())) {
-		if (!DB::create_table(db, Sql::get_query_create_task_table())) {
+	if (!DB::exists_table(db, Sql::check_for_task_table())) {
+		if (!DB::create_table(db, Sql::create_task_table())) {
 			std::cout << "Error: creating task table failed.\n";
 			return 1;
 		}
@@ -175,7 +184,7 @@ int main()
 
 			/* Insert task. */
 			QueryStmt insert_task_stmt = QueryStmt::create()
-					.set_sql_query(Sql::get_query_insert_task())
+					.set_sql_query(Sql::insert_task())
 					.prepare(db)
 					.add_param(1, QueryParam(task_name_b64))
 					.add_param(2, QueryParam(task_descr_b64))
@@ -189,7 +198,7 @@ int main()
 
 			/* Fetch tasks from DB. */
 			QueryStmt select_tasks_stmt = QueryStmt::create()
-					.set_sql_query(Sql::get_query_select_all_tasks())
+					.set_sql_query(Sql::select_all_tasks())
 					.prepare(db)
 					.add_param(1, QueryParam(logged_in_user.id))
 					.build();
@@ -220,7 +229,7 @@ int main()
 
 			/* Fetch task from DB. */
 			QueryStmt select_task_stmt = QueryStmt::create()
-					.set_sql_query(Sql::get_query_select_task())
+					.set_sql_query(Sql::select_task())
 					.prepare(db)
 					.add_param(1, QueryParam(std::stoi(task_number)))
 					.build();

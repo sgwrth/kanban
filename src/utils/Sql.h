@@ -4,16 +4,16 @@
 
 class Sql {
 public:
-	static std::string get_query_check_for_task_table();
-	static std::string get_query_check_for_user_table();
-	static std::string get_query_create_task_table();
-	static std::string get_query_create_user_table();
-	static std::string get_query_fetch_user();
-	static std::string get_query_insert_task();
-	static std::string get_query_insert_user();
-	static std::string get_query_select_all_tasks();
-	static std::string get_query_select_task();
-	static std::string get_query_select_user();
+	static std::string check_for_task_table();
+	static std::string check_for_user_table();
+	static std::string create_task_table();
+	static std::string create_user_table();
+	static std::string fetch_user();
+	static std::string insert_task();
+	static std::string insert_user();
+	static std::string select_all_tasks();
+	static std::string select_task();
+	static std::string select_user();
 };
 
 #endif

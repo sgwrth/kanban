@@ -8,12 +8,11 @@
 #include "../app/Menu_item.h"
 
 std::string Input::get_menu_option_choice(
-		// const std::vector<std::unique_ptr<Menu_item>>& menu,
 		const Menu menu,
 		const std::string& menu_name
 )
 {
-	std::string user_choice {};
+	std::string user_choice{};
 	do {
 		std::cout << menu_name << ":\n";
 		for (const auto& option : menu.options_) {

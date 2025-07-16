@@ -3,7 +3,7 @@
 #include <sstream>
 #include <string>
 
-std::string Sql::get_query_check_for_task_table()
+std::string Sql::check_for_task_table()
 {
 	const char* sql = R"(
 		SELECT name
@@ -14,7 +14,7 @@ std::string Sql::get_query_check_for_task_table()
 	return std::string(sql);
 }
 
-std::string Sql::get_query_check_for_user_table()
+std::string Sql::check_for_user_table()
 {
 
 	const char* sql = R"(
@@ -26,7 +26,7 @@ std::string Sql::get_query_check_for_user_table()
 	return std::string(sql);
 }
 
-std::string Sql::get_query_create_task_table()
+std::string Sql::create_task_table()
 {
 	const char* sql = R"(
 		CREATE TABLE task (
@@ -41,7 +41,7 @@ std::string Sql::get_query_create_task_table()
 	return std::string(sql);
 }
 
-std::string Sql::get_query_create_user_table()
+std::string Sql::create_user_table()
 {
 	const char* sql = R"(
 		CREATE TABLE user (
@@ -53,7 +53,7 @@ std::string Sql::get_query_create_user_table()
 	return std::string(sql);
 }
 
-std::string Sql::get_query_fetch_user()
+std::string Sql::fetch_user()
 {
 	const char* sql = R"(
 		SELECT * FROM user AS u -- Replace '*' with necessary columns.
@@ -62,7 +62,7 @@ std::string Sql::get_query_fetch_user()
 	return std::string(sql);
 }
 
-std::string Sql::get_query_insert_task()
+std::string Sql::insert_task()
 {
 	const char* sql = R"(
 		INSERT INTO task (name, description, userid)
@@ -71,7 +71,7 @@ std::string Sql::get_query_insert_task()
 	return std::string(sql);
 }
 
-std::string Sql::get_query_insert_user()
+std::string Sql::insert_user()
 {
 	const char* sql = R"(
 		INSERT INTO user (username, password)
@@ -80,7 +80,7 @@ std::string Sql::get_query_insert_user()
 	return std::string(sql);
 }
 
-std::string Sql::get_query_select_all_tasks()
+std::string Sql::select_all_tasks()
 {
 	const char* sql = R"(
 		SELECT * FROM task AS t -- Replace '*' with necessary columns.
@@ -89,7 +89,7 @@ std::string Sql::get_query_select_all_tasks()
 	return std::string(sql);
 }
 
-std::string Sql::get_query_select_task()
+std::string Sql::select_task()
 {
 	const char* sql = R"(
 		SELECT * FROM task AS t
@@ -98,7 +98,7 @@ std::string Sql::get_query_select_task()
 	return std::string(sql);
 }
 
-std::string Sql::get_query_select_user()
+std::string Sql::select_user()
 {
 	const char* sql = R"(
 		SELECT * FROM user -- Replace '*' with necessary columns.
