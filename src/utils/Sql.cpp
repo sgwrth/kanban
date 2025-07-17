@@ -1,6 +1,4 @@
 #include "Sql.h"
-#include <fstream>
-#include <sstream>
 #include <string>
 
 std::string Sql::check_for_task_table()

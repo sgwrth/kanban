@@ -17,8 +17,9 @@ std::string Crypto::sha256(const std::string& str)
 	SHA256((const unsigned char*) str.c_str(), str.size(), hash);
 
 	std::stringstream ss;
-	for (int i = 0; i < SHA256_DIGEST_LENGTH; ++i)
-	ss << std::hex << std::setw(2) << std::setfill('0') << (int)hash[i];
+	for (int i = 0; i < SHA256_DIGEST_LENGTH; ++i) {
+        ss << std::hex << std::setw(2) << std::setfill('0') << (int)hash[i];
+    }
 	return ss.str();
 }
 
@@ -98,9 +99,9 @@ Credentials Crypto::encrypt_creds(Credentials creds)
 {
 	std::string username_encrypted{Crypto::encrypt(creds.username_)};
 	std::string username_encrypted_b64{Crypto::to_base64(username_encrypted)};
-	std::string pw_hashed_encrypted{Crypto::encrypt(creds.pw_hashed_)};
-	std::string pw_hashed_encrypted_b64{Crypto::to_base64(pw_hashed_encrypted)};
-	return Credentials(username_encrypted_b64, pw_hashed_encrypted_b64);
+	std::string pw_hashed_encryp{Crypto::encrypt(creds.pw_hashed_)};
+	std::string pw_hashed_encryp_b64{Crypto::to_base64(pw_hashed_encryp)};
+	return Credentials(username_encrypted_b64, pw_hashed_encryp_b64);
 }
 
 std::string Crypto::decrypt_from_b64(std::string base_64)

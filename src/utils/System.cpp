@@ -13,8 +13,9 @@ std::string System::get_binary_dir()
 	 * from which the binary is called for execution.
 	 */
 	auto buffer = std::vector<char>(1024);
-	const ssize_t len = readlink("/proc/self/exe", buffer.data(), buffer.size() - 1);
+	const ssize_t len =
+        readlink("/proc/self/exe", buffer.data(), buffer.size() - 1);
 	buffer[len] = '\0'; /* Terminate the path. */
 	const std::string binary_path{buffer.data()}; /* Create a copy. */
-	return dirname(buffer.data()); /* 'dirname' modifies buffer.data() in place. */
+	return dirname(buffer.data()); /* Modifies buffer.data() in place. */
 }

@@ -6,7 +6,7 @@
 class Text {
 public:
 	static std::string crop_task_name(const std::string& task_name);
-	static std::string priority_to_string(const Priority& priority);
+	static std::string priority_to_str(const Priority& priority);
 };
 
 #endif

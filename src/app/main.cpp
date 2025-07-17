@@ -27,8 +27,7 @@ int main()
 	/* Open or, if it doesn't exist, create DB. */
 	sqlite3* db{nullptr};
 	if (sqlite3_open(db_fullpath.c_str(), &db) != SQLITE_OK) {
-		std::cerr << "Could not open DB: " << sqlite3_errmsg(db)
-			<< '\n';
+		std::cerr << "Could not open DB: " << sqlite3_errmsg(db) << '\n';
 	}
 
 	if (!DB::exists_table(db, Sql::check_for_user_table())) {
@@ -52,34 +51,31 @@ int main()
 	User logged_in_user;
 
 	(void) initscr();
-	(void) signal(SIGINT, Tui::finish);	/* arrange interrupts to terminate */
-	keypad(stdscr, TRUE);			/* enable keyboard mapping */
-	(void) nonl();				/* tell curses not to do NL->CR/NL on output */
-	// (void) cbreak();			/* take input chars one at a time, no wait for \n */
+	(void) signal(SIGINT, Tui::finish);
+	keypad(stdscr, TRUE);
+	(void) nonl();
+	// (void) cbreak(); /* Take input one char at a time. */
 	(void) echo();
 	
 	/* Show user menu and get user's choice. */
 	std::string user_choice =
-		Input::get_menu_option_choice(user_menu, "User menu"); 
+        Input::get_menu_option_choice(user_menu, "User menu"); 
 
 	/* Get selected option name. */
 	std::string selected_option_user_menu =
-		Input::get_selected_option_name(
-			std::stoi(user_choice),
-			user_menu
-		);	
+		Input::get_selected_option_name(std::stoi(user_choice), user_menu);
 
 	if (selected_option_user_menu == LOG_IN) {
 
 		Credentials creds = Credentials::get_creds_from_input();
-		Credentials creds_encrypted_b64 = Crypto::encrypt_creds(creds);
+		Credentials creds_encryp_b64 = Crypto::encrypt_creds(creds);
 
 		QueryStmt select_user_stmt = QueryStmt::create()
-				.set_sql_query(Sql::select_user())
-				.prepare(db)
-				.add_param(1, QueryParam(creds_encrypted_b64.username_))
-				.add_param(2, QueryParam(creds_encrypted_b64.pw_hashed_))
-				.build();
+			.set_sql_query(Sql::select_user())
+			.prepare(db)
+			.add_param(1, QueryParam(creds_encryp_b64.username_))
+			.add_param(2, QueryParam(creds_encryp_b64.pw_hashed_))
+			.build();
 
 		/* Early return with error code in case login failed. */
 		if (sqlite3_step(select_user_stmt.stmt_) != SQLITE_ROW) {
@@ -88,20 +84,21 @@ int main()
 		}
 
 		/* Retrieve user's data and assign to local user struct. */
-		int user_id_from_db = (int) sqlite3_column_int(select_user_stmt.stmt_, 0);
-		std::string username_from_db_b64 = (const char*) sqlite3_column_text(select_user_stmt.stmt_, 1);
+		int user_id_from_db =
+            (int) sqlite3_column_int(select_user_stmt.stmt_, 0);
+		std::string username_from_db_b64 =
+            (const char*) sqlite3_column_text(select_user_stmt.stmt_, 1);
 
 		/* Decrypt user's data. */
-		std::string username_from_db_raw_binary{Crypto::to_raw_binary(username_from_db_b64)};
-		std::string username_from_db_decrypted{Crypto::decrypt(username_from_db_raw_binary)};
+		std::string username_from_db_raw_binary =
+            Crypto::to_raw_binary(username_from_db_b64);
+		std::string username_from_db_decrypted =
+            Crypto::decrypt(username_from_db_raw_binary);
 
 		logged_in_user.id = user_id_from_db;
 		logged_in_user.username = username_from_db_decrypted;
-		/*
-		std::cout << "Login successful!  Welcome, " << logged_in_user.username
-				<< " [ID: " << logged_in_user.id << "]\n";
-		*/
-		printw("Login successful!  Welcome, %s [ID: %d]\n",
+		printw(
+            "Login successful!  Welcome, %s [ID: %d]\n",
 	 		logged_in_user.username.c_str(),
 	 		logged_in_user.id
 	 	);
@@ -117,40 +114,49 @@ int main()
 	if (selected_option_user_menu == CREATE_USER) {
 
 		Credentials creds = Credentials::get_creds_from_input();
-		Credentials creds_encrypted_b64 = Crypto::encrypt_creds(creds);
+		Credentials creds_encryp_b64 = Crypto::encrypt_creds(creds);
 
 		QueryStmt insert_user_stmt = QueryStmt::create()
-				.set_sql_query(Sql::insert_user())
-				.prepare(db)
-				.add_param(1, QueryParam(creds_encrypted_b64.username_))
-				.add_param(2, QueryParam(creds_encrypted_b64.pw_hashed_))
-				.build();
+			.set_sql_query(Sql::insert_user())
+			.prepare(db)
+			.add_param(1, QueryParam(creds_encryp_b64.username_))
+			.add_param(2, QueryParam(creds_encryp_b64.pw_hashed_))
+			.build();
 
 		int rc = sqlite3_step(insert_user_stmt.stmt_);
 
-		if (rc == SQLITE_DONE) {
-
-			QueryStmt fetch_user_stmt = QueryStmt::create()
-					.set_sql_query(Sql::fetch_user())
-					.prepare(db)
-					.add_param(1, QueryParam(creds_encrypted_b64.username_))
-					.build();
-
-			rc = sqlite3_step(fetch_user_stmt.stmt_);
-
-			/* Assign user ID and username from DB to local user struct member. */
-			int user_id_from_db = (int) sqlite3_column_int(fetch_user_stmt.stmt_, 0);
-			std::string username_encrypted = (const char*) sqlite3_column_text(fetch_user_stmt.stmt_, 1);
-			std::string username = Crypto::decrypt_from_b64(username_encrypted);
-			logged_in_user.username = username;
-			logged_in_user.id = user_id_from_db;
-
-			std::cout << "New user [ID " << logged_in_user.id << "] created.  "
-					<< "Hello, " << logged_in_user.username << '\n';
-		} else {
+		/* Early return (exit) in case of error. */
+		if (rc != SQLITE_DONE) {
 			std::cout << "Something went wrong.  Bye.\n";
 			return 1;
 		}
+
+		QueryStmt fetch_user_stmt = QueryStmt::create()
+			.set_sql_query(Sql::fetch_user())
+			.prepare(db)
+			.add_param(1, QueryParam(creds_encryp_b64.username_))
+			.build();
+
+		rc = sqlite3_step(fetch_user_stmt.stmt_);
+
+		/* Assign user's ID and name from DB to local struct. */
+		int user_id_from_db =
+			(int) sqlite3_column_int(fetch_user_stmt.stmt_, 0);
+
+		std::string username_encrypted =
+			(const char*) sqlite3_column_text(fetch_user_stmt.stmt_, 1);
+		
+		std::string username = Crypto::decrypt_from_b64(username_encrypted);
+
+		logged_in_user.username = username;
+		logged_in_user.id = user_id_from_db;
+
+		std::cout << "New user [ID "
+			<< logged_in_user.id
+			<< "] created.  "
+			<< "Hello, "
+			<< logged_in_user.username
+			<< '\n';
 	}
 
 	if (selected_option_user_menu == EXIT_FROM_USER_MENU) {
@@ -185,10 +191,14 @@ int main()
 	while (true) {
 
 		/* Show menu and get user's choice. */
-		std::string choice = Input::get_menu_option_choice(main_menu, "Main menu");
+		std::string choice =
+			Input::get_menu_option_choice(main_menu, "Main menu");
 
 		/* Get name of selected option. */
-		std::string selected_option{Input::get_selected_option_name(std::stoi(choice), main_menu)};	
+		std::string selected_option = Input::get_selected_option_name(
+				std::stoi(choice),
+				main_menu
+        );	
 
 		clear();
 		
@@ -208,24 +218,28 @@ int main()
 			/* Get task descripition. */
 			addstr("Enter task description:");
 			move(++y_pos, 0);
-			char buffer_task_description[1024];
-			wgetnstr(stdscr, buffer_task_description, sizeof(buffer_task_description) - 1);
-			std::string task_description{buffer_task_description};
+			char buffer_task_descr[1024];
+			wgetnstr(
+				stdscr,
+				buffer_task_descr,
+				sizeof(buffer_task_descr) - 1
+			);
+			std::string task_descr{buffer_task_descr};
 
 			/* Encrypt task name and description. */
-			std::string task_name_raw_binary{Crypto::encrypt(task_name)};
-			std::string task_name_b64{Crypto::to_base64(task_name_raw_binary)};
-			std::string task_descr_raw_binary{Crypto::encrypt(task_description)};
-			std::string task_descr_b64{Crypto::to_base64(task_descr_raw_binary)};
+			std::string task_name_bin{Crypto::encrypt(task_name)};
+			std::string task_name_b64{Crypto::to_base64(task_name_bin)};
+			std::string task_descr_bin{Crypto::encrypt(task_descr)};
+			std::string task_descr_b64{Crypto::to_base64(task_descr_bin)};
 
 			/* Insert task. */
 			QueryStmt insert_task_stmt = QueryStmt::create()
-					.set_sql_query(Sql::insert_task())
-					.prepare(db)
-					.add_param(1, QueryParam(task_name_b64))
-					.add_param(2, QueryParam(task_descr_b64))
-					.add_param(3, QueryParam(logged_in_user.id))
-					.build();
+				.set_sql_query(Sql::insert_task())
+				.prepare(db)
+				.add_param(1, QueryParam(task_name_b64))
+				.add_param(2, QueryParam(task_descr_b64))
+				.add_param(3, QueryParam(logged_in_user.id))
+				.build();
 
 			int rc = sqlite3_step(insert_task_stmt.stmt_);
 		}
@@ -234,22 +248,22 @@ int main()
 
 			/* Fetch tasks from DB. */
 			QueryStmt select_tasks_stmt = QueryStmt::create()
-					.set_sql_query(Sql::select_all_tasks())
-					.prepare(db)
-					.add_param(1, QueryParam(logged_in_user.id))
-					.build();
+				.set_sql_query(Sql::select_all_tasks())
+				.prepare(db)
+				.add_param(1, QueryParam(logged_in_user.id))
+				.build();
 			
 			/* Create vector of tasks. */
 			std::vector<Task> all_tasks;
 			while (sqlite3_step(select_tasks_stmt.stmt_) == SQLITE_ROW) {
 				Task task = Task::create()
-						.set("id", select_tasks_stmt.stmt_, 0)
-						.set("name", select_tasks_stmt.stmt_, 1) /* Decrypted. */
-						.set("description", select_tasks_stmt.stmt_, 2) /* Decrypted. */
-						.set("priority", select_tasks_stmt.stmt_, 3) /* From int. */
-						.set("user_id", select_tasks_stmt.stmt_, 4)
-						.set("created_at", select_tasks_stmt.stmt_, 5)
-						.build();
+					.set("id", select_tasks_stmt.stmt_, 0)
+					.set("name", select_tasks_stmt.stmt_, 1)
+					.set("description", select_tasks_stmt.stmt_, 2)
+					.set("priority", select_tasks_stmt.stmt_, 3)
+					.set("user_id", select_tasks_stmt.stmt_, 4)
+					.set("created_at", select_tasks_stmt.stmt_, 5)
+					.build();
 				all_tasks.push_back(task);
 			};
 
@@ -265,20 +279,21 @@ int main()
 
 			/* Fetch task from DB. */
 			QueryStmt select_task_stmt = QueryStmt::create()
-					.set_sql_query(Sql::select_task())
-					.prepare(db)
-					.add_param(1, QueryParam(std::stoi(task_number)))
-					.build();
+				.set_sql_query(Sql::select_task())
+				.prepare(db)
+				.add_param(1, QueryParam(std::stoi(task_number)))
+				.build();
 
 			if (sqlite3_step(select_task_stmt.stmt_) != SQLITE_ROW) {
 				std::cout << "Error fetching task\n";
 				return 1;
 			}
+
 			Task task = Task::create()
 				.set("id", select_task_stmt.stmt_, 0)
-				.set("name", select_task_stmt.stmt_, 1) /* Decrypted. */
-				.set("description", select_task_stmt.stmt_, 2) /* Decrypted. */
-				.set("priority", select_task_stmt.stmt_, 3) /* From int. */
+				.set("name", select_task_stmt.stmt_, 1)
+				.set("description", select_task_stmt.stmt_, 2)
+				.set("priority", select_task_stmt.stmt_, 3)
 				.set("user_id", select_task_stmt.stmt_, 4)
 				.set("created_at", select_task_stmt.stmt_, 5)
 				.build();

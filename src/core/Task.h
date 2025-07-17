@@ -6,7 +6,14 @@
 
 class Task {
 public:
-	Task(int id, std::string name, std::string description, int priority, int user_id, std::string created_at);
+	Task(
+        int id,
+        std::string name,
+        std::string description,
+        int priority,
+        int user_id,
+        std::string created_at
+    );
 
 	/* Getters and setters. */
 	int get_id();

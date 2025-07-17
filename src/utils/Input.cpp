@@ -6,7 +6,10 @@
 #include "./Menu.h"
 #include "../app/Menu_item.h"
 
-std::string Input::get_menu_option_choice(const Menu menu,const std::string& menu_name)
+std::string Input::get_menu_option_choice(
+	const Menu menu,
+	const std::string& menu_name
+)
 {
 	std::string user_choice {};
 	int y_pos{0};
@@ -17,10 +20,17 @@ std::string Input::get_menu_option_choice(const Menu menu,const std::string& men
 		y_pos = 0;
 		move(y_pos, 0);
 		for (const auto& option : menu.options_) {
-			printw("[%d] %s\n", option.get_number(), option.get_name().c_str());
+			printw(
+				"[%d] %s\n",
+				option.get_number(),
+				option.get_name().c_str()
+			);
 			move(++y_pos, 0);
 		}
-		wgetnstr(stdscr, buffer, sizeof(buffer) - 1); // implicitly calls refresh()
+
+		/* wgetnstr() mplicitly calls refresh(). */
+		wgetnstr(stdscr, buffer, sizeof(buffer) - 1);
+
 		user_choice = buffer;
 	} while (!Input::is_valid_menu_option(user_choice, menu));
 	return user_choice;
@@ -40,7 +50,10 @@ bool Input::is_valid_menu_option(const std::string& input, const Menu& menu)
 		return false;
 	}
 }
-std::string Input::get_selected_option_name(const int choice, const Menu& menu)
+std::string Input::get_selected_option_name(
+    const int choice,
+    const Menu& menu
+)
 {
 	std::string selected_option{};
 	for (const auto& menu_item : menu) {
@@ -50,5 +63,3 @@ std::string Input::get_selected_option_name(const int choice, const Menu& menu)
 	}
 	return selected_option;
 }
-
-

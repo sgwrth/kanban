@@ -5,13 +5,20 @@
 #include "../utils/Crypto.h"
 #include "../../external/sqlite/sqlite3.h"
 
-Task::Task(int id, std::string name, std::string description, int priority, int user_id, std::string created_at)
-		: id_{id}
-		, name_{name}
-		, description_{description}
-		, priority_{priority}
-		, user_id_{user_id}
-		, created_at_{created_at}
+Task::Task(
+    int id,
+    std::string name,
+    std::string description,
+    int priority,
+    int user_id,
+    std::string created_at
+)
+    : id_{id}
+    , name_{name}
+    , description_{description}
+    , priority_{priority}
+    , user_id_{user_id}
+    , created_at_{created_at}
 {}
 
 int Task::get_id()
@@ -87,16 +94,22 @@ Task& Task::set(std::string member, sqlite3_stmt* stmt, int column)
 	if (member == "id") {
 		int id = (int) sqlite3_column_int(stmt, column);
 		set_id(id);
+
 	} else if (member == "name") {
 		std::string name = (const char*) sqlite3_column_text(stmt, column);
-		std::string name_raw_binary{Crypto::to_raw_binary(name)};
-		std::string name_decrypted{Crypto::decrypt(name_raw_binary)};
+		std::string name_raw_binary = Crypto::to_raw_binary(name);
+		std::string name_decrypted = Crypto::decrypt(name_raw_binary);
 		set_name(name_decrypted);
+
 	} else if (member == "description") {
-		std::string description = (const char*) sqlite3_column_text(stmt, column);
-		std::string description_raw_binary{Crypto::to_raw_binary(description)};
-		std::string description_decrypted{Crypto::decrypt(description_raw_binary)};
+		std::string description =
+            (const char*) sqlite3_column_text(stmt, column);
+		std::string description_raw_binary =
+            Crypto::to_raw_binary(description);
+		std::string description_decrypted =
+            Crypto::decrypt(description_raw_binary);
 		set_description(description_decrypted);
+
 	} else if (member == "priority") {
 		int priority = (int) sqlite3_column_int(stmt, column);
 		switch (priority) {
@@ -113,15 +126,20 @@ Task& Task::set(std::string member, sqlite3_stmt* stmt, int column)
 			std::cout << "Error: invalid priority.\n";
 			break;
 		}
+
 	} else if (member == "user_id") {
 		int user_id = (int) sqlite3_column_int(stmt, column);
 		set_user_id(user_id);
+
 	} else if (member == "created_at") {
-		std::string created_at = (const char*) sqlite3_column_text(stmt, column);
+		std::string created_at =
+            (const char*) sqlite3_column_text(stmt, column);
 		set_created_at(created_at);
+
 	} else {
 		std::cout << "Error: invalid member.\n";
 	}
+
 	return *this;
 }
 
