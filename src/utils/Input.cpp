@@ -50,6 +50,7 @@ bool Input::is_valid_menu_option(const std::string& input, const Menu& menu)
 		return false;
 	}
 }
+
 std::string Input::get_selected_option_name(
     const int choice,
     const Menu& menu
@@ -62,4 +63,15 @@ std::string Input::get_selected_option_name(
 		}
 	}
 	return selected_option;
+}
+
+void Input::prompt_for_enter()
+{
+    addstr("Press ENTER to continue.");
+
+    /* Using blocking wgetnstr() in order to above display notice. */
+    noecho();
+    char buff[1];
+    wgetnstr(stdscr, buff, sizeof(buff) - 1);
+    echo();
 }

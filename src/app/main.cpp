@@ -31,8 +31,10 @@ int main()
 	}
 
 	if (!DB::exists_table(db, Sql::check_for_user_table())) {
+        /* If creation of user table fails, exit program. */
 		if (!DB::create_table(db, Sql::create_user_table())) {
 			std::cout << "Error: creating user table failed.\n";
+			sqlite3_close(db);
 			return 1;
 		}
 	}
@@ -80,6 +82,7 @@ int main()
 		/* Early return with error code in case login failed. */
 		if (sqlite3_step(select_user_stmt.stmt_) != SQLITE_ROW) {
 			std::cout << "Login failed.  Good bye.\n";
+            Tui::finish(0);
 			return 1;
 		}
 
@@ -102,13 +105,7 @@ int main()
 	 		logged_in_user.username.c_str(),
 	 		logged_in_user.id
 	 	);
-		addstr("Press ENTER to continue.");
-
-		/* Using blocking wgetnstr() in order to display above notice. */
-		noecho();
-		char buff[1];
-		wgetnstr(stdscr, buff, sizeof(buff) - 1);
-		echo();
+        Input::prompt_for_enter();
 	}
 
 	if (selected_option_user_menu == CREATE_USER) {
@@ -122,11 +119,9 @@ int main()
 			.add_param(1, QueryParam(creds_encryp_b64.username_))
 			.add_param(2, QueryParam(creds_encryp_b64.pw_hashed_))
 			.build();
-
-		int rc = sqlite3_step(insert_user_stmt.stmt_);
-
+		
 		/* Early return (exit) in case of error. */
-		if (rc != SQLITE_DONE) {
+		if (sqlite3_step(insert_user_stmt.stmt_) != SQLITE_DONE) {
 			std::cout << "Something went wrong.  Bye.\n";
 			return 1;
 		}
@@ -137,7 +132,7 @@ int main()
 			.add_param(1, QueryParam(creds_encryp_b64.username_))
 			.build();
 
-		rc = sqlite3_step(fetch_user_stmt.stmt_);
+		int rc = sqlite3_step(fetch_user_stmt.stmt_);
 
 		/* Assign user's ID and name from DB to local struct. */
 		int user_id_from_db =
@@ -167,8 +162,10 @@ int main()
 	}
 
 	if (!DB::exists_table(db, Sql::check_for_task_table())) {
+        /* If creation of task table fails, exit program. */
 		if (!DB::create_table(db, Sql::create_task_table())) {
 			std::cout << "Error: creating task table failed.\n";
+			Tui::finish(0);
 			return 1;
 		}
 	}
@@ -196,8 +193,8 @@ int main()
 
 		/* Get name of selected option. */
 		std::string selected_option = Input::get_selected_option_name(
-				std::stoi(choice),
-				main_menu
+            std::stoi(choice),
+            main_menu
         );	
 
 		clear();
@@ -215,7 +212,7 @@ int main()
 			std::string task_name{buffer_task_name};
 			move(++y_pos, 0);
 
-			/* Get task descripition. */
+			/* Get task description. */
 			addstr("Enter task description:");
 			move(++y_pos, 0);
 			char buffer_task_descr[1024];
@@ -267,21 +264,34 @@ int main()
 				all_tasks.push_back(task);
 			};
 
-			/* Output all tasks. */
 			Output::print_tasks(all_tasks);
+            Input::prompt_for_enter();
 		}
 
 		if (selected_option == SELECT_TASK) {
 
+            clear();
+
+            int y_pos{0};
+            int x_pos{0};
+
 			std::string task_number{};
+            addstr("Enter task #: ");
+            char task_num_buf[5];
+            wgetnstr(stdscr, task_num_buf, sizeof(task_num_buf) - 1);
+
+            clear();
+            refresh();
+            /*
 			std::cout << "Enter task #: ";
 			std::getline(std::cin, task_number);
+            */
 
 			/* Fetch task from DB. */
 			QueryStmt select_task_stmt = QueryStmt::create()
 				.set_sql_query(Sql::select_task())
 				.prepare(db)
-				.add_param(1, QueryParam(std::stoi(task_number)))
+				.add_param(1, QueryParam(std::stoi(std::string(task_num_buf))))
 				.build();
 
 			if (sqlite3_step(select_task_stmt.stmt_) != SQLITE_ROW) {
@@ -299,6 +309,7 @@ int main()
 				.build();
 
 			Output::print_task(task);
+            Input::prompt_for_enter();
 		}
 
 		/* Quit program. */

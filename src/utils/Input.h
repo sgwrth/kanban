@@ -20,6 +20,7 @@ public:
         const int choice,
         const Menu& menu
     );
+    static void prompt_for_enter();
 };
 
 #endif
