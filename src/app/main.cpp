@@ -17,16 +17,18 @@
 #include "../utils/System.h"
 #include "../../external/sqlite/sqlite3.h"
 
+#define DB_FILENAME "data.db"
+
 int main()
 {
 	/* Prepare filepath for DB creation. */
-	std::string db_filename{"data.db"};
-	const std::string db_fullpath = System::get_binary_dir() + '/' + db_filename;
+	const std::string db_fullpath = System::get_bin_dir() + '/' + DB_FILENAME;
 
 	/* Open or, if it doesn't exist, create DB. */
 	sqlite3* db{nullptr};
 	if (sqlite3_open(db_fullpath.c_str(), &db) != SQLITE_OK) {
 		std::cerr << "Could not open DB: " << sqlite3_errmsg(db) << '\n';
+        return 1;
 	}
 
 	if (!DB::exists_table(db, Sql::check_for_user_table())) {
@@ -84,14 +86,8 @@ int main()
 			return 1;
 		}
 
-		/* Retrieve user's data, decrypt and assign it to local user struct. */
-		int user_id = (int) sqlite3_column_int(select_user.stmt_, 0);
-		std::string username_b64 =
-            (const char*) sqlite3_column_text(select_user.stmt_, 1);
-		std::string username_bin = Crypto::to_bin(username_b64);
-		std::string username_decrypted = Crypto::decrypt(username_bin);
-		logged_in_user.id = user_id;
-		logged_in_user.username = username_decrypted;
+		/* Read user's data, decrypt and assign it to local user struct. */
+        DB::assign_user_data(select_user, logged_in_user);
 
 		printw(
             "Login successful!  Welcome, %s [ID: %d]\n",
@@ -191,7 +187,7 @@ int main()
 		
 		if (selected_option == CREATE_TASK) {
 
-			unsigned short y_pos = 0;
+			int y_pos = 0;
 
 			/* Get task name. */
 			addstr("Enter task name (max. 16 characters):");
@@ -231,28 +227,7 @@ int main()
 		}
 
 		if (selected_option == SHOW_TASKS) {
-
-			/* Fetch tasks from DB. */
-			QueryStmt select_tasks = QueryStmt::create()
-				.set_sql_query(Sql::select_all_tasks())
-				.prepare(db)
-				.add_param(1, QueryParam(logged_in_user.id))
-				.build();
-			
-			/* Create vector of tasks. */
-			std::vector<Task> all_tasks;
-			while (sqlite3_step(select_tasks.stmt_) == SQLITE_ROW) {
-				Task task = Task::create()
-					.set("id", select_tasks.stmt_, 0)
-					.set("name", select_tasks.stmt_, 1)
-					.set("description", select_tasks.stmt_, 2)
-					.set("priority", select_tasks.stmt_, 3)
-					.set("user_id", select_tasks.stmt_, 4)
-					.set("created_at", select_tasks.stmt_, 5)
-					.build();
-				all_tasks.push_back(task);
-			};
-
+            std::vector<Task> all_tasks = DB::get_tasks(db, logged_in_user);
 			Output::print_tasks(all_tasks);
             Input::prompt_for_enter();
 		}
@@ -261,26 +236,22 @@ int main()
 
             clear();
 
-            unsigned short y_pos{0};
-            int x_pos{0};
+            std::vector<Task> all_tasks = DB::get_tasks(db, logged_in_user);
+            Output::print_tasks(all_tasks);
 
 			std::string task_number{};
             addstr("Enter task #: ");
-            char task_num_buf[5];
-            wgetnstr(stdscr, task_num_buf, sizeof(task_num_buf) - 1);
+            char buf_task_num[5];
+            wgetnstr(stdscr, buf_task_num, sizeof(buf_task_num) - 1);
 
             clear();
             refresh();
-            /*
-			std::cout << "Enter task #: ";
-			std::getline(std::cin, task_number);
-            */
 
 			/* Fetch task from DB. */
 			QueryStmt select_task = QueryStmt::create()
 				.set_sql_query(Sql::select_task())
 				.prepare(db)
-				.add_param(1, QueryParam(std::stoi(std::string(task_num_buf))))
+				.add_param(1, QueryParam(std::stoi(std::string(buf_task_num))))
 				.build();
 
 			if (sqlite3_step(select_task.stmt_) != SQLITE_ROW) {

@@ -4,7 +4,7 @@
 #include <unistd.h>
 #include <vector>
 
-std::string System::get_binary_dir()
+std::string System::get_bin_dir()
 {
 	/*
 	 * Non-portable, Linux-specific way of getting the directory

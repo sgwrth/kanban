@@ -4,7 +4,7 @@
 
 class System {
 public:
-	static std::string get_binary_dir();
+	static std::string get_bin_dir();
 };
 
 #endif
