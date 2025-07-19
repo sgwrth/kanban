@@ -65,13 +65,13 @@ std::string Input::get_opt_name(
 	return selected_option;
 }
 
-void Input::prompt_for_enter()
+void Input::prompt_for_enter(std::string message)
 {
-    addstr("Press ENTER to continue.");
+    addstr(message.c_str());
 
     /* Using blocking wgetnstr() in order to above display notice. */
     noecho();
-    char buff[1];
+    char buff[2];
     wgetnstr(stdscr, buff, sizeof(buff) - 1);
     echo();
 }

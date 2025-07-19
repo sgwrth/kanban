@@ -20,7 +20,7 @@ public:
         const int choice,
         const Menu& menu
     );
-    static void prompt_for_enter();
+    static void prompt_for_enter(std::string message);
 };
 
 #endif

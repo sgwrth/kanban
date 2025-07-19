@@ -36,6 +36,7 @@ int main()
 		if (!DB::create_table(db, Sql::create_user_table())) {
 			std::cout << "Error: creating user table failed.\n";
 			sqlite3_close(db);
+            Tui::finish(0);
 			return 1;
 		}
 	}
@@ -94,7 +95,7 @@ int main()
 	 		logged_in_user.username.c_str(),
 	 		logged_in_user.id
 	 	);
-        Input::prompt_for_enter();
+        Input::prompt_for_enter("Press ENTER to continue.");
 	}
 
 	if (selected_option_user_menu == CREATE_USER) {
@@ -111,7 +112,10 @@ int main()
 		
 		/* Early return (exit) in case of error. */
 		if (sqlite3_step(insert_user.stmt_) != SQLITE_DONE) {
-			std::cout << "Something went wrong.  Bye.\n";
+			addstr("Something went wrong.\n");
+            Input::prompt_for_enter("Press ENTER to exit the program.");
+            sqlite3_close(db);
+            Tui::finish(0);
 			return 1;
 		}
 
@@ -123,21 +127,14 @@ int main()
 
 		int rc = sqlite3_step(fetch_user.stmt_);
 
-		/* Assign user's ID and name from DB to local struct. */
-		int user_id =
-			(int) sqlite3_column_int(fetch_user.stmt_, 0);
-		std::string username_encrypted =
-			(const char*) sqlite3_column_text(fetch_user.stmt_, 1);
-		std::string username = Crypto::decrypt_from_b64(username_encrypted);
-		logged_in_user.username = username;
-		logged_in_user.id = user_id;
+        DB::assign_user_data(fetch_user, logged_in_user);
 
-		std::cout << "New user [ID "
-			<< logged_in_user.id
-			<< "] created.  "
-			<< "Hello, "
-			<< logged_in_user.username
-			<< '\n';
+        printw(
+            "New user [ID %d] created.  Hello, %s\n",
+            logged_in_user.id, 
+            logged_in_user.username.c_str()
+        );
+        Input::prompt_for_enter("Press ENTER to continue.");
 	}
 
 	if (selected_option_user_menu == EXIT_FROM_USER_MENU) {
@@ -178,16 +175,14 @@ int main()
 		std::string choice = Input::get_menu_option_choice(main_menu, "Main menu");
 
 		/* Get name of selected option. */
-		std::string selected_option = Input::get_opt_name(
-            std::stoi(choice),
-            main_menu
-        );	
+		std::string selected_option =
+            Input::get_opt_name(std::stoi(choice), main_menu);
 
 		clear();
 		
 		if (selected_option == CREATE_TASK) {
 
-			int y_pos = 0;
+			unsigned short y_pos{0};
 
 			/* Get task name. */
 			addstr("Enter task name (max. 16 characters):");
@@ -229,7 +224,7 @@ int main()
 		if (selected_option == SHOW_TASKS) {
             std::vector<Task> all_tasks = DB::get_tasks(db, logged_in_user);
 			Output::print_tasks(all_tasks);
-            Input::prompt_for_enter();
+            Input::prompt_for_enter("Press ENTER to continue.");
 		}
 
 		if (selected_option == SELECT_TASK) {
@@ -269,7 +264,7 @@ int main()
 				.build();
 
 			Output::print_task(task);
-            Input::prompt_for_enter();
+            Input::prompt_for_enter("Press ENTER to continue.");
 		}
 
 		/* Quit program. */
