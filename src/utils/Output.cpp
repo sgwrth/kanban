@@ -30,13 +30,5 @@ void Output::print_task(Task& task)
     printw("Priority:\t%s\n", Text::priority_to_str(task.get_priority()).c_str());
     printw("Name:\t\t%s\n", task.get_name().c_str());
     printw("Description:\n");
-
-    /*
-	std::cout << "Task ID:\t" << task.get_id() << '\n'
-        << "Created at:\t" << task.get_created_at() << '\n'
-        << "Priority:\t" << Text::priority_to_str(task.get_priority()) << '\n'
-        << "Name:\t\t" << task.get_name() << '\n'
-        << "Description:\n"
-        << task.get_description() << '\n';
-    */
+    printw("%s\n", task.get_description().c_str());
 }
