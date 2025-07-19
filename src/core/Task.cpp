@@ -97,17 +97,17 @@ Task& Task::set(std::string member, sqlite3_stmt* stmt, int column)
 
 	} else if (member == "name") {
 		std::string name = (const char*) sqlite3_column_text(stmt, column);
-		std::string name_raw_binary = Crypto::to_raw_binary(name);
-		std::string name_decrypted = Crypto::decrypt(name_raw_binary);
+		std::string name_bin = Crypto::to_bin(name);
+		std::string name_decrypted = Crypto::decrypt(name_bin);
 		set_name(name_decrypted);
 
 	} else if (member == "description") {
 		std::string description =
             (const char*) sqlite3_column_text(stmt, column);
-		std::string description_raw_binary =
-            Crypto::to_raw_binary(description);
+		std::string description_bin =
+            Crypto::to_bin(description);
 		std::string description_decrypted =
-            Crypto::decrypt(description_raw_binary);
+            Crypto::decrypt(description_bin);
 		set_description(description_decrypted);
 
 	} else if (member == "priority") {

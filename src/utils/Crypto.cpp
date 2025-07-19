@@ -82,10 +82,10 @@ std::string Crypto::to_base64(const std::string& raw_binary)
 	return base64_string;
 }
 
-std::string Crypto::to_raw_binary(const std::string& base64)
+std::string Crypto::to_bin(const std::string& base64)
 {
 	std::string raw_binary{};
-	CryptoPP::StringSource string_source_raw_binary(
+	CryptoPP::StringSource string_source_bin(
 			base64,
 			true,
 			new CryptoPP::Base64Decoder(
@@ -106,5 +106,5 @@ Credentials Crypto::encrypt_creds(Credentials creds)
 
 std::string Crypto::decrypt_from_b64(std::string base_64)
 {
-	return Crypto::decrypt(Crypto::to_raw_binary(base_64));
+	return Crypto::decrypt(Crypto::to_bin(base_64));
 }

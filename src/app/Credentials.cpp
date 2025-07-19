@@ -10,7 +10,7 @@ Credentials::Credentials(std::string username, std::string pw_hashed)
 
 Credentials Credentials::get_creds_from_input()
 {
-	int y_pos{0};
+	unsigned short y_pos{0};
 	int x_pos{0};
 
 	char buffer_username[128];

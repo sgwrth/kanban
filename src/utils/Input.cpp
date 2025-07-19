@@ -12,7 +12,7 @@ std::string Input::get_menu_option_choice(
 )
 {
 	std::string user_choice {};
-	int y_pos{0};
+	unsigned short y_pos{0};
 	int x_pos{0};
 	char buffer[2];
 	do {
@@ -51,7 +51,7 @@ bool Input::is_valid_menu_option(const std::string& input, const Menu& menu)
 	}
 }
 
-std::string Input::get_selected_option_name(
+std::string Input::get_opt_name(
     const int choice,
     const Menu& menu
 )

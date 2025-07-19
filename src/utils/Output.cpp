@@ -7,7 +7,7 @@
 void Output::print_tasks(std::vector<Task>& tasks)
 {
     clear();
-    int y_pos{0};
+    unsigned short y_pos{0};
     addstr("Tasks:\n");
 	for (int i = 0; i < tasks.size(); ++i) {
         printw(
@@ -24,7 +24,7 @@ void Output::print_tasks(std::vector<Task>& tasks)
 void Output::print_task(Task& task)
 {
     clear();
-    int y_pos{0};
+    unsigned short y_pos{0};
     printw("Task ID:\t%.3d\n", task.get_id());
     printw("Created at:\t%s\n", task.get_created_at().c_str());
     printw("Priority:\t%s\n", Text::priority_to_str(task.get_priority()).c_str());

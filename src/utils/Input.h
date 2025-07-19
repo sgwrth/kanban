@@ -16,7 +16,7 @@ public:
         const std::string& input,
         const Menu& menu
     );
-	static std::string get_selected_option_name(
+	static std::string get_opt_name(
         const int choice,
         const Menu& menu
     );
