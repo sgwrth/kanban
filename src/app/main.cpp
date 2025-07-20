@@ -1,3 +1,4 @@
+#include <cctype>
 #include <csignal>
 #include <curses.h>
 #include <iostream>
@@ -34,9 +35,8 @@ int main()
 	if (!DB::exists_table(db, Sql::check_for_user_table())) {
         /* If creation of user table fails, exit program. */
 		if (!DB::create_table(db, Sql::create_user_table())) {
-			std::cout << "Error: creating user table failed.\n";
+			std::cerr << "Error: creating user table failed.\n";
 			sqlite3_close(db);
-            Tui::finish(0);
 			return 1;
 		}
 	}
@@ -52,7 +52,7 @@ int main()
         .add_option(EXIT_FROM_USER_MENU)
         .build();
 
-	User logged_in_user;
+	User logged_in_user; /* Global variable. */
 
 	(void) initscr();
 	(void) signal(SIGINT, Tui::finish);
@@ -82,12 +82,12 @@ int main()
 
 		/* Early return with error code in case login failed. */
 		if (sqlite3_step(select_user.stmt_) != SQLITE_ROW) {
-			std::cout << "Login failed.  Good bye.\n";
+			std::cout << "Login failed.  Good bye.\n"; /* Use curses and close DB. */
             Tui::finish(0);
 			return 1;
 		}
 
-		/* Read user's data, decrypt and assign it to local user struct. */
+		/* Read user's data, decrypt it and assign it to user struct. */
         DB::assign_user_data(select_user, logged_in_user);
 
 		printw(
@@ -127,6 +127,7 @@ int main()
 
 		int rc = sqlite3_step(fetch_user.stmt_);
 
+		/* Read user's data, decrypt it and assign it to user struct. */
         DB::assign_user_data(fetch_user, logged_in_user);
 
         printw(
@@ -138,7 +139,7 @@ int main()
 	}
 
 	if (selected_option_user_menu == EXIT_FROM_USER_MENU) {
-		std::cout << "Bye.\n";
+		std::cout << "Bye.\n"; /* Use curses. */
 		sqlite3_close(db);
 		Tui::finish(0);
 		return 0;
@@ -185,22 +186,16 @@ int main()
 			unsigned short y_pos{0};
 
 			/* Get task name. */
-			addstr("Enter task name (max. 16 characters):");
-			move(++y_pos, 0);
-			char buffer_task_name[128];
+			addstr("Enter task name (max. 16 characters):\n");
+			char buffer_task_name[17]; /* Magic number. */
 			wgetnstr(stdscr, buffer_task_name, sizeof(buffer_task_name) - 1);
 			std::string task_name{buffer_task_name};
 			move(++y_pos, 0);
 
 			/* Get task description. */
-			addstr("Enter task description:");
-			move(++y_pos, 0);
-			char buffer_task_descr[1024];
-			wgetnstr(
-				stdscr,
-				buffer_task_descr,
-				sizeof(buffer_task_descr) - 1
-			);
+			addstr("Enter task description:\n");
+			char buffer_task_descr[1025]; /* Magic number. */
+			wgetnstr(stdscr, buffer_task_descr, sizeof(buffer_task_descr) - 1);
 			std::string task_descr{buffer_task_descr};
 
 			/* Encrypt task name and description. */
@@ -234,10 +229,9 @@ int main()
             std::vector<Task> all_tasks = DB::get_tasks(db, logged_in_user);
             Output::print_tasks(all_tasks);
 
-			std::string task_number{};
-            addstr("Enter task #: ");
-            char buf_task_num[5];
-            wgetnstr(stdscr, buf_task_num, sizeof(buf_task_num) - 1);
+            char buf_task_num[5]; /* Magic number. */
+
+            Input::get_num(buf_task_num, 5, "Enter task #: ");
 
             clear();
             refresh();
@@ -250,7 +244,9 @@ int main()
 				.build();
 
 			if (sqlite3_step(select_task.stmt_) != SQLITE_ROW) {
-				std::cout << "Error fetching task\n";
+                Input::prompt_for_enter("Error fetching task.  Bye.");
+                sqlite3_close(db);
+                Tui::finish(0);
 				return 1;
 			}
 

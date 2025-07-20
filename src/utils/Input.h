@@ -21,6 +21,7 @@ public:
         const Menu& menu
     );
     static void prompt_for_enter(std::string message);
+    static void get_num(char buffer[], int buf_size, std::string message);
 };
 
 #endif

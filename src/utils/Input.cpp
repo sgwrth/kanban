@@ -11,9 +11,8 @@ std::string Input::get_menu_option_choice(
 	const std::string& menu_name
 )
 {
-	std::string user_choice {};
+	std::string user_choice{};
 	unsigned short y_pos{0};
-	int x_pos{0};
 	char buffer[2];
 	do {
 		clear();
@@ -28,7 +27,7 @@ std::string Input::get_menu_option_choice(
 			move(++y_pos, 0);
 		}
 
-		/* wgetnstr() mplicitly calls refresh(). */
+		/* wgetnstr() implicitly calls refresh(). */
 		wgetnstr(stdscr, buffer, sizeof(buffer) - 1);
 
 		user_choice = buffer;
@@ -44,17 +43,14 @@ bool Input::is_valid_menu_option(const std::string& input, const Menu& menu)
 		return (input_size == input.length())
 				&& (choice >= 0)
 				&& (choice < menu.options_.size());
-	} catch (const std::invalid_argument&) {
+	} catch (const std::invalid_argument& e) {
 		return false;
-	} catch (const std::out_of_range&) {
+	} catch (const std::out_of_range& e) {
 		return false;
 	}
 }
 
-std::string Input::get_opt_name(
-    const int choice,
-    const Menu& menu
-)
+std::string Input::get_opt_name(const int choice, const Menu& menu)
 {
 	std::string selected_option{};
 	for (const auto& menu_item : menu) {
@@ -74,4 +70,38 @@ void Input::prompt_for_enter(std::string message)
     char buff[2];
     wgetnstr(stdscr, buff, sizeof(buff) - 1);
     echo();
+}
+
+void Input::get_num(char buffer[], int buf_size, std::string message)
+{
+    while (true) {
+
+        addstr(message.c_str());
+        wgetnstr(stdscr, buffer, buf_size - 1);
+
+        /* Trust. */
+        bool is_input_all_digits{true};
+
+        /* But verify. */
+        for (int i = 0; i < buf_size; i++) {
+            if (i == 0 && buffer[i] == '\0') {
+                is_input_all_digits = false;
+                break;
+            }
+            if (buffer[i] == '\0') {
+                break;
+            }
+            if (!std::isdigit(buffer[i])) {
+                is_input_all_digits = false;
+            }
+        }
+
+        if (!is_input_all_digits) {
+            addstr("Invalid input.  Try again.\n");
+        }
+
+        if (is_input_all_digits) {
+            break;
+        }
+    }
 }
