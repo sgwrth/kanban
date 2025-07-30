@@ -19,6 +19,13 @@
 #include "../../external/sqlite/sqlite3.h"
 
 #define DB_FILENAME "data.db"
+#define MSG_ENTER_CONT "Press ENTER to continue."
+#define MSG_ENTER_EXIT "Press ENTER to exit the program."
+
+/* Include null terminator. */
+#define TASK_NUM_BUFSIZE 5
+#define TASK_NAME_BUFSIZE 17
+#define TASK_DESCR_BUFSIZE 1025
 
 int main()
 {
@@ -32,6 +39,7 @@ int main()
         return 1;
 	}
 
+    /* If user table doesn't exist, create it. */
 	if (!DB::exists_table(db, Sql::check_for_user_table())) {
         /* If creation of user table fails, exit program. */
 		if (!DB::create_table(db, Sql::create_user_table())) {
@@ -45,7 +53,6 @@ int main()
 	const std::string LOG_IN{"Log in"};
 	const std::string CREATE_USER{"Create user"};
 	const std::string EXIT_FROM_USER_MENU{"Exit"};
-
 	Menu user_menu = Menu::create()
         .add_option(LOG_IN)
         .add_option(CREATE_USER)
@@ -54,6 +61,7 @@ int main()
 
 	User logged_in_user; /* Global variable. */
 
+    // Initialize curses. */
 	(void) initscr();
 	(void) signal(SIGINT, Tui::finish);
 	keypad(stdscr, TRUE);
@@ -82,7 +90,9 @@ int main()
 
 		/* Early return with error code in case login failed. */
 		if (sqlite3_step(select_user.stmt_) != SQLITE_ROW) {
-			std::cout << "Login failed.  Good bye.\n"; /* Use curses and close DB. */
+            addstr("Login failed.  Bye.\n"); 
+            Input::prompt_for_enter("Press ENTER to exit the program.");
+            sqlite3_close(db);
             Tui::finish(0);
 			return 1;
 		}
@@ -148,7 +158,8 @@ int main()
 	if (!DB::exists_table(db, Sql::check_for_task_table())) {
         /* If creation of task table fails, exit program. */
 		if (!DB::create_table(db, Sql::create_task_table())) {
-			std::cout << "Error: creating task table failed.\n";
+			addstr("Error: creating task table failed.\n");
+            Input::prompt_for_enter("Press ENTER to exit the program");
             sqlite3_close(db);
 			Tui::finish(0);
 			return 1;
@@ -186,17 +197,23 @@ int main()
 			unsigned short y_pos{0};
 
 			/* Get task name. */
-			addstr("Enter task name (max. 16 characters):\n");
-			char buffer_task_name[17]; /* Magic number. */
-			wgetnstr(stdscr, buffer_task_name, sizeof(buffer_task_name) - 1);
-			std::string task_name{buffer_task_name};
+			printw(
+                "Enter task name (max. %d characters):\n",
+                TASK_NAME_BUFSIZE - 1
+            );
+			char buf_task_name[TASK_NAME_BUFSIZE];
+			wgetnstr(stdscr, buf_task_name, TASK_NAME_BUFSIZE - 1);
+			std::string task_name{buf_task_name};
 			move(++y_pos, 0);
 
 			/* Get task description. */
-			addstr("Enter task description:\n");
-			char buffer_task_descr[1025]; /* Magic number. */
-			wgetnstr(stdscr, buffer_task_descr, sizeof(buffer_task_descr) - 1);
-			std::string task_descr{buffer_task_descr};
+			printw(
+                "Enter task description (max: %d characters\n",
+                TASK_DESCR_BUFSIZE - 1
+            );
+			char buf_task_descr[TASK_DESCR_BUFSIZE]; /* Magic number. */
+			wgetnstr(stdscr, buf_task_descr, TASK_DESCR_BUFSIZE - 1);
+			std::string task_descr{buf_task_descr};
 
 			/* Encrypt task name and description. */
 			std::string task_name_bin{Crypto::encrypt(task_name)};
@@ -229,9 +246,9 @@ int main()
             std::vector<Task> all_tasks = DB::get_tasks(db, logged_in_user);
             Output::print_tasks(all_tasks);
 
-            char buf_task_num[5]; /* Magic number. */
+            char buf_task_num[TASK_NUM_BUFSIZE];
 
-            Input::get_num(buf_task_num, 5, "Enter task #: ");
+            Input::get_num(buf_task_num, TASK_NUM_BUFSIZE, "Enter task #: ");
 
             clear();
             refresh();
